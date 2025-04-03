@@ -210,8 +210,12 @@ module "ecr_fe" {
   source_services = ["fe"]
 }
 
-
-
+#-------------------------------------SNS-------------------------------------#
+module "sns_alarm" {
+  source      = "./modules/sns"
+  project     = local.project
+  URL_GG_HOOK = "https://chat.googleapis.com/v1/spaces/AAAA6ublkJQ/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=MJ5QNtA8EPTF7SicSlrdU1FBoIbB9HbsCtUP_TNqXT4"
+}
 
 
 

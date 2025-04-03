@@ -2,7 +2,7 @@ variable "project" {
   type = object({
     region     = string
     account_id = number
-    project    = string
+    name       = string
     env        = string
   })
 }
