@@ -1,5 +1,6 @@
-#------------------------ Cloudwatch Alarm Lambda ------------------------
+#------------------------ Cloudwatch Alarm ------------------------
 
+#IAM Role for Lambda
 resource "aws_iam_role" "lambda-cloudwatch" {
   name = "${var.project.env}-${var.project.name}-lambda-cloudwatch-alarm"
   assume_role_policy = jsonencode({
@@ -15,6 +16,8 @@ resource "aws_iam_role" "lambda-cloudwatch" {
     ]
   })
 }
+
+#IAM Policy for Lambda
 resource "aws_iam_policy" "lambda-cloudwatch" {
   policy = <<EOT
 {
@@ -39,10 +42,14 @@ resource "aws_iam_policy" "lambda-cloudwatch" {
 }
 EOT
 }
+
+#Attach IAM Policy to IAM Role
 resource "aws_iam_role_policy_attachment" "lambda-cloudwatch" {
   role       = aws_iam_role.lambda-cloudwatch.name
   policy_arn = aws_iam_policy.lambda-cloudwatch.arn
 }
+
+#Create Lambda Function
 resource "aws_lambda_function" "cloudwatch-alarm" {
   filename      = "cloudwatch_alarm.zip"
   function_name = "${var.project.env}-${var.project.name}-cloudwatch-alarm"
@@ -55,13 +62,15 @@ resource "aws_lambda_function" "cloudwatch-alarm" {
     }
   }
 }
-#Subcribe lambda to sns
 
+#Subcribe lambda to sns
 resource "aws_sns_topic_subscription" "lambda-cloudwatch" {
   topic_arn = aws_sns_topic.cloudwatch-alarm.arn
   protocol  = "lambda"
   endpoint  = aws_lambda_function.cloudwatch-alarm.arn
 }
+
+#Allow lambda to be invoked by sns
 resource "aws_lambda_permission" "sns-cloudwatch" {
   statement_id  = "AllowExecutionFromSNS"
   action        = "lambda:InvokeFunction"

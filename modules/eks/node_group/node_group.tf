@@ -1,4 +1,5 @@
-#--------------------------EKS Node Group--------------------------
+##################################### NODE GROUP #########################################
+#-------------------------- Node Group --------------------------
 resource "aws_eks_node_group" "node_groups" {
   for_each = var.node_groups
 
@@ -10,14 +11,14 @@ resource "aws_eks_node_group" "node_groups" {
   labels          = lookup(each.value, "labels", null)
   release_version = lookup(each.value, "release_version")
 
-#Scaling Config
+#----------- Scaling Config -----------
   scaling_config {
     min_size     = lookup(each.value, "min_size", 1)
     max_size     = lookup(each.value, "max_size", 1)
     desired_size = lookup(each.value, "desired_size", 1)
   }
 
-#Launch Template
+#----------- Launch Template -----------
   launch_template {
     id      = aws_launch_template.node_groups[each.key].id
     version = aws_launch_template.node_groups[each.key].latest_version
@@ -28,7 +29,7 @@ resource "aws_eks_node_group" "node_groups" {
     # ignore_changes        = [scaling_config[0].desired_size]
   }
 
-# Taints
+#----------- Taints -----------
   dynamic "taint" {
     for_each = lookup(each.value, "taints", [])
     iterator = taint
@@ -40,6 +41,7 @@ resource "aws_eks_node_group" "node_groups" {
     }
   }
 
+#----------- Attach Policies -----------
   depends_on = [
     aws_iam_role_policy_attachment.node_group_AmazonEKSWorkerNodePolicy,
     aws_iam_role_policy_attachment.node_group_AmazonEKS_CNI_Policy,
@@ -51,7 +53,7 @@ resource "aws_eks_node_group" "node_groups" {
   tags = merge(var.project, lookup(each.value, "tags", {}))
 }
 
-#--------------------------EKS Node Group Role--------------------------
+#-------------------------- Node Group Role --------------------------
 resource "aws_iam_role" "node_group" {
   name = format("%s-eks-node-group", var.name)
 
@@ -69,7 +71,7 @@ resource "aws_iam_role" "node_group" {
   tags = var.project
 }
 
-#Attach Policies to Node Group Role
+#----------- Attach Policies to Node Group Role -----------
 resource "aws_iam_role_policy_attachment" "node_group_AmazonEKSWorkerNodePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.node_group.name
@@ -102,15 +104,23 @@ resource "aws_iam_role_policy_attachment" "node_group_extra" {
   role       = aws_iam_role.node_group.name
 }
 
-#--------------------------EKS Node Group Security Group--------------------------
+#-------------------------- Node Group Security Group --------------------------
 resource "aws_security_group" "node_groups" {
   for_each = var.node_groups
 
   name   = format("%s-%s-eks-node-group-sg", var.name, each.key)
-  vpc_id = var.eks_vpc_id
+  vpc_id = var.eks_vpc
 
   dynamic "ingress" {
-    for_each = lookup(each.value, "ingress_rules", [])
+    for_each = lookup(var.node_group_ingress_rules, "ingress_rules", [
+      {
+        security_groups = [aws_security_group.eks_cluster.id]
+        from_port       = 443
+        to_port         = 443
+        protocol        = "tcp"
+        description     = "Allow worker nodes to communicate with control plane"
+      }
+    ])
 
     content {
       self            = lookup(ingress.value, "self", null)
@@ -132,7 +142,7 @@ resource "aws_security_group" "node_groups" {
   tags = var.project
 }
 
-#--------------------------EKS Node Group Launch Template--------------------------
+#-------------------------- Node Group Launch Template--------------------------
 resource "aws_launch_template" "node_groups" {
   for_each = var.node_groups
 
@@ -166,7 +176,7 @@ resource "aws_launch_template" "node_groups" {
     }
   }
 
-#Network Interfaces
+#Network Interfaces -----------
   network_interfaces {
     security_groups = distinct(concat(
       [
@@ -203,7 +213,7 @@ resource "aws_launch_template" "node_groups" {
   tags = var.project
 }
 
-#--------------------------EKS Node Group Cloud-Init Config--------------------------
+#-------------------------- Node Group Cloud-Init Config--------------------------
 data "cloudinit_config" "node_groups" {
   for_each = {
     for k, v in var.node_groups :
@@ -224,8 +234,8 @@ data "cloudinit_config" "node_groups" {
     content {
       content_type = "text/x-shellscript"
       content      = <<EOF
-mkfs -t ext4 ${part.value.device_name}
-EOF
+      mkfs -t ext4 ${part.value.device_name}
+      EOF
     }
   }
 
@@ -235,10 +245,10 @@ EOF
     content {
       content_type = "text/x-shellscript"
       content      = <<EOF
-mkdir -p ${part.value.mount_path}
-mount ${part.value.device_name} ${part.value.mount_path}
-echo "${part.value.device_name} ${part.value.mount_path} ext4  defaults,nofail,discard,comment=cloudconfig 0 0" >> /etc/fstab
-EOF
+      mkdir -p ${part.value.mount_path}
+      mount ${part.value.device_name} ${part.value.mount_path}
+      echo "${part.value.device_name} ${part.value.mount_path} ext4  defaults,nofail,discard,comment=cloudconfig 0 0" >> /etc/fstab
+      EOF
     }
   }
 }

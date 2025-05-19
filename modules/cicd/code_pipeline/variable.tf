@@ -1,5 +1,5 @@
-variable "oauth_token" {}
-variable "organization" {}
+variable "git_token" {}
+variable "git_org" {}
 variable "git_repo" {}
 variable "git_branch" {}
 variable "pipeline_name" {}

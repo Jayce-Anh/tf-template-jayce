@@ -38,7 +38,21 @@ locals {
     project = "${local.project.name}"
     env     = "${local.project.env}"
   }
+  #Git configuration
+    git_repo = {
+    fe = {
+      url = "https://github.com/kasta-sotatek/example-fe"
+      name = "example-fe"
+      branch = "develop"
+    }
+    be = {
+      url = "https://github.com/kasta-sotatek/example-be"
+      name = "example-be"
+      branch = "develop"
+    }
+  }
 }
+
 
 provider "aws" {
   region = local.project.region

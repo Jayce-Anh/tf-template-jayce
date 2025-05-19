@@ -14,8 +14,3 @@ output "lb_listener_http_arn" {
 output "lb_listener_https_arn" {
   value = aws_lb_listener.lb_listener_https.arn
 }
-
-######################## TARGET GROUP ########################
-output "tg_arns" {
-  value = { for k, v in aws_lb_target_group.tg : k => v.arn }
-}

@@ -44,12 +44,6 @@ variable "instance_name" {
 
 variable "subnet_id" {}
 
-variable "path_user_data" {
-  type        = string
-  description = "Path to file.sh has content of user_data"
-  default     = ""
-}
-
 variable "alb_sg_id" {
   type = string
   description = "Security group ID of ALB"

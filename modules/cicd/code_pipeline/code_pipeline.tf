@@ -26,10 +26,10 @@ resource "aws_codepipeline" "codepipeline" {
       output_artifacts = ["Source_Artifacts"]
 
       configuration = {
-        Owner      = var.organization
+        Owner      = var.git_org
         Repo       = var.git_repo
         Branch     = var.git_branch
-        OAuthToken = var.oauth_token
+        OAuthToken = var.git_token
       }
     }
   }
@@ -83,8 +83,8 @@ resource "aws_codepipeline" "codepipeline" {
 #-------------------------- Integrate CodePipeline with GitHub --------------------------
 #Connect to GitHub with OAuth Token
 provider "github" {
-  token = var.OAuthToken
-  owner = var.organization
+  token = var.git_token
+  owner = var.git_org
 }
 
 #Generate a random secret token for the CodePipeline webhook
@@ -95,7 +95,7 @@ resource "random_string" "secret_token" {
 
 #CodePipeline webhook
 resource "aws_codepipeline_webhook" "bar" {
-  name            = "${var.project.project}-${var.project.env}-${var.pipeline_name}-webhook"
+  name            = "${var.project.name}-${var.project.env}-${var.pipeline_name}-webhook"
   authentication  = "GITHUB_HMAC"
   target_action   = "Source"
   target_pipeline = aws_codepipeline.codepipeline.name
@@ -129,7 +129,7 @@ resource "aws_codepipeline_webhook" "bar" {
 
 #-------------------------- CodeDeploy Role --------------------------
 resource "aws_iam_role" "codedeploy_role" {
-  name = "${var.common.env}_code_deploy_role"
+  name = "${var.project.env}_code_deploy_role"
 
   assume_role_policy = <<EOF
 {
@@ -161,7 +161,7 @@ resource "aws_iam_role_policy_attachment" "AWSCodeDeployRoleForECS" {
 
 #-------------------------- CodePipeline Role --------------------------
 resource "aws_iam_role" "pipeline_role" {
-  name = "${var.common.project}-${var.common.env}-codepipeline-role"
+  name = "${var.project.name}-${var.project.env}-codepipeline-role"
 
   assume_role_policy = <<EOF
 {
@@ -360,7 +360,7 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
 
 #-------------------------- CodeBuild Role --------------------------
 resource "aws_iam_role" "codebuild_role" {
-  name               = "${var.common.project}-${var.common.env}-codebuild-role"
+  name               = "${var.project.name}-${var.project.env}-codebuild-role"
   assume_role_policy = jsonencode({
     Version   = "2012-10-17"
     Statement = [

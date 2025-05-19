@@ -1,4 +1,4 @@
-#-------------------------- CodeBuild --------------------------
+######################## CODEBUILD ########################
 resource "aws_codebuild_project" "codebuild" {
   name         = "${var.project.env}-${var.project.name}-build-project"
   service_role = var.codebuild_role_arn
@@ -22,6 +22,6 @@ resource "aws_codebuild_project" "codebuild" {
   }
   source {
     type      = "CODEPIPELINE"
-    buildspec = var.buildspec_file
+    buildspec = file(var.buildspec_file)
   }
 }

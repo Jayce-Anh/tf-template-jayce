@@ -1,11 +1,6 @@
-module "parameter-be" {
+module "parameter-store" {
   source          = "../../modules/parameter-store"
   project         = local.project
-  source_services = ["be"]
+  source_services = ["be", "fe"]
 }
 
-module "parameter-fe" {
-  source          = "../../modules/parameter-store"
-  project         = local.project
-  source_services = ["fe"]
-}

@@ -114,7 +114,7 @@ resource "aws_instance" "ec2" {
     project = "${var.project.name}"
   }
 
-  user_data = var.path_user_data != "" ? file("${var.path_user_data}") : null
+  user_data = "${path.module}/modules/ec2/user_data/user_data.sh"  #var.path_user_data != "" ? file("${var.path_user_data}") : null
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
   lifecycle {
     ignore_changes = [

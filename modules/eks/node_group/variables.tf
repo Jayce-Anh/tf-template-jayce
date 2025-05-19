@@ -13,11 +13,11 @@ variable "eks_version" {
   type = string
 }
 
-variable "eks_vpc_id" {
+variable "eks_vpc" {
   type = string
 }
 
-variable "eks_subnet_ids" {
+variable "eks_subnet" {
   type = list(string)
 }
 
@@ -49,8 +49,19 @@ variable "map_roles" {
 variable "addons" {
   type        = any
   description = "Addons(vpc-cni, coredns,  aws-ebs-csi-driver and on)"
+  default = {}
 }
 
-variable "cluser_security_group_ids"{
-  default = [] 
+variable "cluster_ingress_rules" {
+  description = "Security group rules for the EKS cluster"
+  type        = any
+  default     = {}
 }
+
+variable "node_group_ingress_rules" {
+  description = "Security group rules for the EKS node group"
+  type        = any
+  default     = {}
+}
+
+

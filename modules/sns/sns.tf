@@ -1,8 +1,9 @@
+#SNS Topic
 resource "aws_sns_topic" "cloudwatch-alarm" {
-  name = "${var.common.env}-${var.common.project}-sns"
-
+  name = "${var.project.env}-${var.project.name}-sns"
 }
 
+#SNS Topic Policy
 resource "aws_sns_topic_policy" "cloudwatch-alarm" {
   arn    = aws_sns_topic.cloudwatch-alarm.arn
   policy = data.aws_iam_policy_document.sns_topic_cloudwatch_policy.json
@@ -11,6 +12,7 @@ resource "aws_sns_topic_policy" "cloudwatch-alarm" {
   # }
 }
 
+#SNS Topic Policy Document
 data "aws_iam_policy_document" "sns_topic_cloudwatch_policy" {
   policy_id = "__default_policy_ID"
 
@@ -31,7 +33,7 @@ data "aws_iam_policy_document" "sns_topic_cloudwatch_policy" {
       variable = "AWS:SourceOwner"
 
       values = [
-        var.common.account_id,
+        var.project.account_id,
       ]
     }
     principals {
@@ -43,6 +45,3 @@ data "aws_iam_policy_document" "sns_topic_cloudwatch_policy" {
   }
 }
 
-output "sns_name" {
-  value = aws_sns_topic.cloudwatch-alarm.arn
-}
