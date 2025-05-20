@@ -14,13 +14,6 @@ module "eks" {
       instance_type = "t3.small"
       disk_size = 10
       disk_type = "gp3"
-      taints = {
-        node1 = {
-          key = "node1"
-          value = "node1"
-          effect = "NoSchedule"
-        }
-      }
     }
 
     node2 = {
@@ -31,13 +24,6 @@ module "eks" {
       instance_type = "t3.small"
       disk_size = 10
       disk_type = "gp3"
-      taints = {
-        node2 = {
-          key = "node2"
-          value = "node2"
-          effect = "NoSchedule"
-        }
-      }
     }
   }
 

@@ -52,16 +52,19 @@ variable "addons" {
   default = {}
 }
 
-variable "cluster_ingress_rules" {
-  description = "Security group rules for the EKS cluster"
-  type        = any
+variable "cluster_ingress" {
+  description = "Map of ingress rules to add to the EKS cluster security group"
+  type        = map(any)
   default     = {}
 }
 
-variable "node_group_ingress_rules" {
-  description = "Security group rules for the EKS node group"
-  type        = any
+variable "node_group_ingress" {
+  description = "Map of ingress rules to add to the EKS node group security group"
+  type        = map(any)
   default     = {}
 }
+
+
+
 
 

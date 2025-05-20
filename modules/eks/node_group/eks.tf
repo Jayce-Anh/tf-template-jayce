@@ -4,39 +4,43 @@ resource "aws_security_group" "eks_cluster" {
   name = format("%s-eks-cluster-sg", var.name)
   description = "Security group for EKS cluster"
   vpc_id = var.eks_vpc
-  
-  # Using dynamic blocks for ingress rules
-  dynamic "ingress" {
-    for_each = lookup(var.cluster_ingress_rules, "ingress_rules", [
-      {
-        security_groups = [aws_security_group.node_groups.id]
-        from_port       = 443
-        to_port         = 443
-        protocol        = "tcp"
-        description     = "Allow worker nodes to communicate with control plane"
-      }
-    ])
 
-    content {
-      self            = lookup(ingress.value, "self", null)
-      security_groups = lookup(ingress.value, "security_groups", null)
-      from_port       = lookup(ingress.value, "from_port", null)
-      to_port         = lookup(ingress.value, "to_port", null)
-      protocol        = lookup(ingress.value, "protocol", null)
-      cidr_blocks     = lookup(ingress.value, "cidr_blocks", null)
-      description     = lookup(ingress.value, "description", null)
-    }
-  }
-
-  # Allow all outbound traffic
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   tags = var.project
+}
+
+# Allow node groups to communicate with the cluster
+resource "aws_security_group_rule" "cluster_ingress_from_nodes" {
+  for_each = var.node_groups
+  
+  security_group_id        = aws_security_group.eks_cluster.id
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.node_groups[each.key].id
+  description              = "Allow pods to communicate with the cluster API Server"
+}
+
+# Extra ingress rules
+resource "aws_security_group_rule" "cluster_extra_ingress" {
+  for_each = try(var.cluster_ingress.ingress_rules, {})
+  
+  security_group_id = aws_security_group.eks_cluster.id
+  type              = "ingress"
+  self              = lookup(each.value, "self", null)
+  source_security_group_id = lookup(each.value, "source_security_group_id", null)
+  from_port         = lookup(each.value, "from_port", null)
+  to_port           = lookup(each.value, "to_port", null)
+  protocol          = lookup(each.value, "protocol", null)
+  cidr_blocks       = lookup(each.value, "cidr_blocks", null)
+  description       = lookup(each.value, "description", null)
 }
 
 #------------------ EKS Cluster ------------------
@@ -99,7 +103,6 @@ resource "aws_iam_role_policy_attachment" "eks_vpc" {
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name = aws_eks_cluster.eks.name
   addon_name   = "vpc-cni"
-  addon_version = "v1.25.1-eksbuild.1"
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
 }
@@ -107,7 +110,6 @@ resource "aws_eks_addon" "vpc_cni" {
 resource "aws_eks_addon" "coredns" {
   cluster_name = aws_eks_cluster.eks.name
   addon_name   = "coredns"
-  addon_version = "v1.25.1-eksbuild.1"
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
 }
@@ -115,7 +117,6 @@ resource "aws_eks_addon" "coredns" {
 resource "aws_eks_addon" "kube_proxy" {
   cluster_name = aws_eks_cluster.eks.name
   addon_name   = "kube-proxy"
-  addon_version = "v1.25.1-eksbuild.1"
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
 }
@@ -123,7 +124,6 @@ resource "aws_eks_addon" "kube_proxy" {
 resource "aws_eks_addon" "aws_ebs_csi_driver" {
   cluster_name = aws_eks_cluster.eks.name
   addon_name   = "aws-ebs-csi-driver"
-  addon_version = "v1.25.1-eksbuild.1"
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
 }
@@ -177,3 +177,4 @@ resource "aws_iam_openid_connect_provider" "eks" {
 
   tags = var.project
 }
+

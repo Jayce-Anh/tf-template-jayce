@@ -5,27 +5,16 @@ module "eks" {
   eks_version = "1.25"
   eks_subnet = local.network.private_subnet_id
   eks_vpc = local.network.vpc_id
-  cluster_ingress_rules = {
-    ingress_rules = [
-      {
-        cidr_blocks = ["10.0.0.0/20"]
-        from_port = 443
-        to_port = 443
-        protocol = "tcp"
-        description = "Example dynamic rules"
-      }
-    ]
-  }
-  node_group_ingress_rules = {
-    ingress_rules = [
-      {
+  cluster_ingress = {
+    ingress_rules = {
+      rule1 = {
+        from_port   = 443
+        to_port     = 443
+        protocol    = "tcp"
         cidr_blocks = ["10.0.0.0/16"]
-        from_port = 443
-        to_port = 443
-        protocol = "tcp"
-        description = "Example dynamic rules"
+        description = "Test dynamic rules"
       }
-    ]
+    }
   }
   node_groups = {
     node1 = {
@@ -36,11 +25,13 @@ module "eks" {
       instance_type = "t3.small"
       disk_size = 10
       disk_type = "gp3"
-      taints = {
-        node1 = {
-          key = "node1"
-          value = "node1"
-          effect = "NoSchedule"
+      ingress_rules = {
+        ssh = {
+          from_port   = 22
+          to_port     = 22
+          protocol    = "tcp"
+          cidr_blocks = ["0.0.0.0/0"]
+          description = "Allow SSH from VPC for node1"
         }
       }
     }
@@ -52,19 +43,28 @@ module "eks" {
       instance_type = "t3.small"
       disk_size = 10
       disk_type = "gp3"
-      taints = {
-        node2 = {
-          key = "node2"
-          value = "node2"
-          effect = "NoSchedule"
+      ingress_rules = {
+        ssh = {
+          from_port   = 22
+          to_port     = 22
+          protocol    = "tcp"
+          cidr_blocks = ["0.0.0.0/0"]
+          description = "Allow SSH from VPC for node2"
+        },
+        alb = {
+          from_port              = 8080
+          to_port                = 8080
+          protocol               = "tcp"
+          source_security_group_id = module.external_lb.lb_sg_id
+          description            = "Allow traffic from ALB to node2 on port 8080"
         }
       }
     }
   }
-  addons = {
-    "aws-ebs-csi-driver" = {
-      addon_name = "aws-ebs-csi-driver"
-      addon_version = "v1.21.0-eksbuild.1"
-    }
-  }
+  # addons = [
+  #   {
+  #     name = "aws-ebs-csi-driver"
+  #     version = "v1.25.1-eksbuild.1"
+  #   }
+  # ]
 }

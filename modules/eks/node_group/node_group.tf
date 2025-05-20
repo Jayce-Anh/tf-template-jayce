@@ -1,4 +1,53 @@
 ##################################### NODE GROUP #########################################
+#-------------------------- Node Group Security Group --------------------------
+resource "aws_security_group" "node_groups" {
+  for_each = var.node_groups
+
+  name   = format("%s-%s-eks-node-group-sg", var.name, each.key)
+  vpc_id = var.eks_vpc
+
+  ingress {
+    from_port                = 443
+    to_port                  = 443
+    protocol                 = "tcp"
+    security_groups          = [aws_security_group.eks_cluster.id] 
+    description              = "Allow communication to cluster"
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = var.project
+}
+
+resource "aws_security_group_rule" "node_group_ingress" {
+  for_each = {
+    for rule_key, rule_value in flatten([
+      for ng_key, ng_value in var.node_groups : [
+        for rule_key, rule_value in lookup(ng_value, "ingress_rules", {}) : {
+          node_group = ng_key
+          rule_key   = rule_key
+          rule_value = rule_value
+        }
+      ]
+    ]) : "${rule_value.node_group}-${rule_value.rule_key}" => rule_value
+  }
+
+  security_group_id        = aws_security_group.node_groups[each.value.node_group].id
+  type                     = "ingress"
+  self                     = lookup(each.value.rule_value, "self", null)
+  source_security_group_id = lookup(each.value.rule_value, "source_security_group_id", null)
+  from_port                = lookup(each.value.rule_value, "from_port", null)
+  to_port                  = lookup(each.value.rule_value, "to_port", null)
+  protocol                 = lookup(each.value.rule_value, "protocol", null)
+  cidr_blocks              = lookup(each.value.rule_value, "cidr_blocks", null)
+  description              = lookup(each.value.rule_value, "description", null)
+}
+
 #-------------------------- Node Group --------------------------
 resource "aws_eks_node_group" "node_groups" {
   for_each = var.node_groups
@@ -6,10 +55,10 @@ resource "aws_eks_node_group" "node_groups" {
   cluster_name    = aws_eks_cluster.eks.name
   node_group_name = lookup(each.value, "name", each.key)
   node_role_arn   = aws_iam_role.node_group.arn
-  subnet_ids      = lookup(each.value, "subnet_ids")
+  subnet_ids      = split(",", each.value.subnet_ids)
   ami_type        = lookup(each.value, "ami_type", "AL2_x86_64")
   labels          = lookup(each.value, "labels", null)
-  release_version = lookup(each.value, "release_version")
+  release_version = lookup(each.value, "release_version", null)
 
 #----------- Scaling Config -----------
   scaling_config {
@@ -71,7 +120,7 @@ resource "aws_iam_role" "node_group" {
   tags = var.project
 }
 
-#----------- Attach Policies to Node Group Role -----------
+#----------- Node Group IAM Policies -----------
 resource "aws_iam_role_policy_attachment" "node_group_AmazonEKSWorkerNodePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.node_group.name
@@ -102,44 +151,6 @@ resource "aws_iam_role_policy_attachment" "node_group_extra" {
 
   policy_arn = each.value
   role       = aws_iam_role.node_group.name
-}
-
-#-------------------------- Node Group Security Group --------------------------
-resource "aws_security_group" "node_groups" {
-  for_each = var.node_groups
-
-  name   = format("%s-%s-eks-node-group-sg", var.name, each.key)
-  vpc_id = var.eks_vpc
-
-  dynamic "ingress" {
-    for_each = lookup(var.node_group_ingress_rules, "ingress_rules", [
-      {
-        security_groups = [aws_security_group.eks_cluster.id]
-        from_port       = 443
-        to_port         = 443
-        protocol        = "tcp"
-        description     = "Allow worker nodes to communicate with control plane"
-      }
-    ])
-
-    content {
-      self            = lookup(ingress.value, "self", null)
-      security_groups = lookup(ingress.value, "security_groups", null)
-      from_port       = lookup(ingress.value, "from_port", null)
-      to_port         = lookup(ingress.value, "to_port", null)
-      protocol        = lookup(ingress.value, "protocol", null)
-      cidr_blocks     = lookup(ingress.value, "cidr_blocks", null)
-    }
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = var.project
 }
 
 #-------------------------- Node Group Launch Template--------------------------
