@@ -7,6 +7,13 @@ variable "project" {
   })
 }
 
+variable "tags" {
+  type = object({
+    Name = string
+  })
+}
+
+
 variable "URL_GG_HOOK" {
   type = string
 }

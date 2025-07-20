@@ -1,7 +1,7 @@
 #-------------------Initial terraform tfstate configuration -------------------#
 terraform {
   backend "s3" {
-    bucket = "lab-jaeger-terraform-state"
+    bucket = "jayce-terraform-state"
     key    = "lab/terraform.tfstate"
     region = "ap-southeast-1"
   }
@@ -11,6 +11,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    github = {
+      source  = "integrations/github"
+      version = "~> 6.0"
+    }
     #     sops = {
     #       source  = "carlpett/sops"
     #       version = ">= 0.7"
@@ -19,41 +23,40 @@ terraform {
 }
 
 #-------------------Project configuration-------------------#
-#Common configuration
 locals {
+  # Project configuration
   project = {
-    name       = "terraform"
+    name       = "todo"
     env        = "lab"
     region     = "ap-southeast-1"
-    account_id = "325842618176"
+    account_id = "680993828488"
   }
-  #Network configuration
+  # Network configuration
   network = {
-    vpc_id            = "${module.vpc.vpc_id}"
-    public_subnet_id  = "${module.vpc.public_subnet_ids}"
-    private_subnet_id = "${module.vpc.private_subnet_ids}"
+    vpc_id             = module.vpc.vpc_id
+    public_subnet_ids  = module.vpc.public_subnet_ids
+    private_subnet_ids = module.vpc.private_subnet_ids
   }
-  #Tags configuration
+
+  # Tags configuration
   tags = {
-    project = "${local.project.name}"
-    env     = "${local.project.env}"
+    Name = "${local.project.env}-${local.project.name}"
+    env  = "${local.project.env}"
   }
-  #Git configuration
-    git_repo = {
+
+  # Git configuration
+  git_repo = {
     fe = {
-      url = "https://github.com/kasta-sotatek/example-fe"
-      name = "example-fe"
-      branch = "develop"
+      url          = "https://github.com/Jayce-Anh/todo_app-fe.git"
+      name         = "todo_app-fe"
+      branch       = "ecs"
+      organization = "Jayce-Anh"
     }
     be = {
-      url = "https://github.com/kasta-sotatek/example-be"
-      name = "example-be"
-      branch = "develop"
+      url          = "https://github.com/Jayce-Anh/todo_app-be.git"
+      name         = "todo_app-be"
+      branch       = "ecs"
+      organization = "Jayce-Anh"
     }
   }
-}
-
-
-provider "aws" {
-  region = local.project.region
 }

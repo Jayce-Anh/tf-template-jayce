@@ -7,6 +7,12 @@ variable "project" {
   })
 }
 
+variable "tags" {
+  type = object({
+    Name = string
+  })
+}
+
 variable "cidr_block" {
   type = string
 }
@@ -14,5 +20,4 @@ variable "cidr_block" {
 variable "subnet_az" {
   type = map(number)
 }
-
 

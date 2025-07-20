@@ -1,7 +1,7 @@
 #-----------------Elasticache Subnet group-----------------
 resource "aws_elasticache_subnet_group" "subnet_group" {
   name       = "${var.project.env}-${var.project.name}-cache-${var.redis_name}"
-  subnet_ids = var.network.private_subnet_ids
+  subnet_ids = var.network.private_subnet_id
 }
 
 #-----------------Elasticache Security group-----------------
@@ -46,7 +46,7 @@ resource "aws_security_group_rule" "sg_rule_redis_from_cidr_blocks" {
 
 #-----------------Elasticache Parameter group-----------------
 resource "aws_elasticache_parameter_group" "parameter_group" {
-  name   = "${var.common.env}-${var.common.project}-${var.redis_name}"
+  name   = "${var.project.env}-${var.project.name}-${var.redis_name}"
   family = var.redis_family
 
   dynamic "parameter" {
@@ -56,11 +56,15 @@ resource "aws_elasticache_parameter_group" "parameter_group" {
       value = parameter.value
     }
   }
+
+  tags = merge(var.tags, {
+    Name = "${var.project.env}-${var.project.name}-${var.redis_name}-parameter-group"
+  })
 }
 
 #-----------------Elasticache Redis Instance-----------------
 resource "aws_elasticache_cluster" "redis" {
-  cluster_id      = "${var.common.env}-${var.common.project}-${var.redis_name}"
+  cluster_id      = "${var.project.env}-${var.project.name}-${var.redis_name}"
   engine          = var.redis_engine
   node_type       = var.redis_node_type
   num_cache_nodes = var.redis_num_cache_nodes
@@ -77,9 +81,9 @@ resource "aws_elasticache_cluster" "redis" {
   snapshot_window          = "00:30-01:30"
   snapshot_retention_limit = var.redis_snapshot_retention_limit
   maintenance_window       = "sat:04:30-sat:05:30"
-  tags                     = {
-    name = "${var.common.env}-${var.common.project}-${var.redis_name}"
-    env  = "${var.common.env}"
-  }
+  
+  tags                     = merge(var.tags, {
+    Name = "${var.project.env}-${var.project.name}-${var.redis_name}-Instance"
+  })
 }
 

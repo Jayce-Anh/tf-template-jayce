@@ -8,12 +8,18 @@
   })
 }
 
+variable "tags" {
+  type = object({
+    Name = string
+  })
+}
+
 #------------------------------------Network------------------------------------#
 variable "network" {
   type = object({
     vpc_id             = string
-    private_subnet_id = list(string)
-    public_subnet_id  = list(string)
+    private_subnet_ids = list(string)
+    public_subnet_ids  = list(string)
   })
 }
 
@@ -54,7 +60,28 @@ variable "alb_sg_id" {
 #   description = "Path to import public key"
 # }
 
+variable "path_user_data" {
+  type = string
+  description = "Path to user data"
+}
+
 variable "key_name" {
   type = string
   description = "Name of the key pair"
 }
+
+# variable "path_public_key" {
+#   type = string
+#   description = "Path to public key"
+# }
+
+variable "sg_ingress" {
+  type = map(object({
+    from_port      = number
+    to_port        = number
+    protocol       = string
+    description    = string
+  }))
+  description = "Map of ingress rules for EC2 security group"
+}
+

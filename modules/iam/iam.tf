@@ -41,7 +41,7 @@ locals {
   inline_policy  = merge(var.inline_policy, local.gha_inline_policy)
 
   default_tags = {
-    Project   = var.project.name
+    Name      = var.project.name
     ManagedBy = "terraform"
   }
 }

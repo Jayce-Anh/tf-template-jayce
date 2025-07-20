@@ -5,6 +5,12 @@ variable "project" {
   })
 }
 
+variable "tags" {
+  type = object({
+    Name = string
+  })
+}
+
 variable "service_name" {
   type = string
 }

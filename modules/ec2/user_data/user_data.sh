@@ -12,7 +12,9 @@ apt-get install -y docker-ce
 usermod -aG docker ubuntu
 systemctl start docker
 systemctl enable docker
+newgrp docker
 docker --version
+
 
 #--------------Install docker-compose---------------#
 curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
@@ -23,12 +25,12 @@ docker-compose --version
 apt-get install -y awscli
 aws --version
 
-#--------------Install CodeDeploy Agent---------------#
-apt-get install -y ruby-full
-apt-get install -y wget
-wget https://aws-codedeploy-ap-southeast-1.s3.amazonaws.com/latest/install
-chmod +x ./install
-./install auto
-systemctl start codedeploy-agent
-systemctl enable codedeploy-agent
+# #--------------Install CodeDeploy Agent---------------#
+# apt-get install -y ruby-full
+# apt-get install -y wget
+# wget https://aws-codedeploy-ap-southeast-1.s3.amazonaws.com/latest/install
+# chmod +x ./install
+# ./install auto
+# systemctl start codedeploy-agent
+# systemctl enable codedeploy-agent
 

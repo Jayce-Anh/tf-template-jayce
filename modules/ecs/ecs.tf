@@ -1,157 +1,89 @@
-#-------------------------------------ECS Task Security Group-------------------------------------#
-resource "aws_security_group" "sg_ecs_task" {
-  name        = "${var.project.env}-${var.project.name}-ecs-task"
-  description = "SG default for ECS Tasks"
-  vpc_id      = var.vpc_id
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-#-------------------------------------Auto Scaling IAM Role-------------------------------------#
-# Create IAM role for auto scaling
-resource "aws_iam_role" "role_auto_scaling" {
-  name = "${var.project.env}-${var.project.name}-as"
-
-  assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Sid    = ""
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      },
-    ]
-  })
-}
-
-# Attach auto scaling policy to the role
-resource "aws_iam_role_policy_attachment" "auto_scaling_policy" {
-  role       = aws_iam_role.role_auto_scaling.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole"
-}
-
-#-------------------------------------ECS Service IAM Role-------------------------------------#
-# Create IAM role for ECS service
-resource "aws_iam_role" "role_ecs_service" {
-  name = "${var.project.env}-${var.project.name}-ecs-service"
-
-  assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Sid    = ""
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      },
-    ]
-  })
-}
-
-# Create a custom policy for ECS service
-resource "aws_iam_role_policy" "role_ecs_service_policy" {
-  name = "${var.project.env}-${var.project.name}-ecs-task-role"
-  role = aws_iam_role.role_ecs_service.name
-
-  policy = jsonencode(
-    {
-      Version   = "2012-10-17",
-      Statement = [
-        {
-          Effect   = "Allow",
-          Resource = [
-            "*"
-          ],
-          Action = [
-            "ssm:DescribeParameters",
-            "ssm:GetParameter"
-          ]
-        },
-        {
-          Action = [
-            "secretsmanager:ListSecrets",
-            "secretsmanager:ListSecretVersionIds",
-            "secretsmanager:GetSecretValue",
-            "secretsmanager:GetResourcePolicy",
-            "secretsmanager:GetRandomPassword",
-            "secretsmanager:DescribeSecret",
-          ]
-          Effect   = "Allow"
-          Resource = [
-            "*",
-          ]
-          Sid = "Statement1"
-        }
-      ]
-    }
-  )
-}
-
-#-------------------------------------ECS Task IAM Role -------------------------------------#
-# Create IAM role for ECS task
-resource "aws_iam_role" "role_execution" {
-  name = "${var.project.env}-${var.project.name}-execution"
-
-  assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Sid    = ""
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      },
-    ]
-  })
-}
-
-# Create a custom policy 
-resource "aws_iam_role_policy" "policy_execution" {
-  name = "${var.project.env}-${var.project.name}-execution"
-  role = aws_iam_role.role_execution.id
-
-  # Terraform's "jsonencode" function converts a text to valid JSON syntax.
-
-  policy = jsonencode({
-    Version   = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:BatchGetImage",
-          "ecr:GetAuthorizationToken",
-          "ecr:GetDownloadUrlForLayer",
-        ]
-        Effect   = "Allow"
-        Resource = "*"
-      },
-    ]
-  })
-}
-
-
-# Attach policy to the role
-resource "aws_iam_role_policy_attachment" "execution_policy" {
-  role       = aws_iam_role.role_execution.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-#-------------------------------------ECS Cluster-------------------------------------#
+################################# ECS #######################################
+#--------------ECS cluster ----------------
 resource "aws_ecs_cluster" "ecs_cluster" {
   name = "${var.project.env}-${var.project.name}-ecs-cluster"
-  tags = {
-    Description = "ECS cluster of ${var.project.env}-${var.project.name}"
+  setting {
+    name  = "containerInsights"
+    value = var.containerInsights
   }
+  
+  tags = merge(var.tags, {
+    Name = "${var.project.env}-${var.project.name}-ecs-cluster"
+  })
+}
+
+#--------------ECS task template ----------------
+data "template_file" "task_definitions" {
+  for_each = var.task_definitions
+  template = file("${path.module}/container_def.json.tpl")
+  vars = {
+    region              = "${var.project.region}"
+    env                 = "${var.project.env}"
+    project             = "${var.project.name}"
+    container_name      = "${each.value.container_name}"
+    container_image     = "${each.value.container_image}"
+    cpu                 = "${each.value.cpu}"
+    memory              = "${each.value.memory}"
+    container_port      = "${each.value.container_port}"
+    host_port           = "${each.value.host_port}"
+    health_check_path   = "${each.value.health_check_path}"
+  }
+}
+
+#--------------ECS task definition ----------------
+resource "aws_ecs_task_definition" "ecs_task" {
+  for_each = {
+    for k, v in var.task_definitions : k => v
+  }
+  family                   = "${var.project.env}-${var.project.name}-${each.value.container_name}-task"
+  execution_role_arn       = aws_iam_role.ecsTaskExecutionRole.arn
+  task_role_arn            = aws_iam_role.ecsTaskRole.arn 
+  network_mode             = var.network_mode
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = each.value.cpu
+  memory                   = each.value.memory
+  container_definitions    = data.template_file.task_definitions[each.key].rendered
+}
+
+#-------------- ECS service ----------------
+resource "aws_ecs_service" "service" {
+  for_each = var.task_definitions
+
+  name            = "${var.project.env}-${var.project.name}-${each.value.container_name}-service"
+  cluster         = aws_ecs_cluster.ecs_cluster.id
+  task_definition = aws_ecs_task_definition.ecs_task[each.key].arn
+  desired_count   = each.value.desired_count
+  launch_type     = "FARGATE"
+  enable_execute_command = true
+
+  # Add health check grace period for ALB
+  health_check_grace_period_seconds = 180  # 3 minutes for container to start
+
+  # Force replacement when network configuration changes
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  network_configuration {
+    security_groups  = each.value.enable_load_balancer ? [aws_security_group.ecs_tasks.id] : [aws_security_group.ecs_tasks_without_ALB.id]
+    subnets          = var.subnets
+    assign_public_ip = false
+  }
+
+  dynamic "load_balancer" {
+    # ALB target group must change the target type to IP for container
+    for_each = each.value.load_balancer != null ? [each.value.load_balancer] : []
+
+    content {
+      target_group_arn = var.target_group_arn 
+      container_name   = "${var.project.env}-${var.project.name}-${each.value.container_name}"
+      container_port   = each.value.load_balancer.container_port
+    }
+  }
+
+  tags = merge(var.tags, {
+    Name = "${var.project.env}-${var.project.name}-${each.value.container_name}-service"
+  })
+
+  depends_on = [aws_iam_role_policy_attachment.ecsTaskExecutionRole_policy]
 }

@@ -1,11 +1,16 @@
-module "rds_mysql" {
-  source  = "../../modules/rds"
+module "rds" {
+  source  = "./modules/rds"
   project = local.project
   network = local.network
+  tags    = local.tags
 
-  rds_name                  = "mysql-db"
-  multi_az                  = false
-  allowed_sg_ids_access_rds = [module.ec2.ec2_sg_id]
+  rds_name = "mysql-db"
+  db_name = "${local.project.name}"
+  multi_az = false
+  allowed_sg_ids_access_rds = [
+    module.bastion.ec2_sg_id,
+    module.ecs.ecs_tasks_sg_id,
+  ]
 
   rds_storage_type = "gp3"
   rds_iops         = 3000
@@ -27,8 +32,7 @@ module "rds_mysql" {
 
   rds_family = "mysql8.0"
   aws_db_parameters = {
-    "max_connections" = 1000
-    #"rds.force_ssl"           = 0 (postgre)
+    "max_connections"          = 500
     "require_secure_transport" = 0
   }
 }

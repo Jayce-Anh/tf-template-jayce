@@ -7,11 +7,17 @@ variable "project" {
   })
 }
 
+variable "tags" {
+  type = object({
+    Name = string
+  })
+}
+
 variable "network" {
   type = object({
     vpc_id             = string
-    private_subnet_ids = list(string)
-    public_subnet_ids  = list(string)
+    private_subnet_id = list(string)
+    public_subnet_id  = list(string)
   })
 }
 
@@ -86,4 +92,9 @@ variable "aws_db_parameters" {
 
 variable "allowed_sg_ids_access_rds" {
   type = list(string)
+}
+
+variable "db_name" {
+  type = string
+  description = "Name of the database when creating the instance"
 }

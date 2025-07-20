@@ -1,24 +1,4 @@
-#------------------Security Group for EKS Cluster ------------------
-resource "aws_security_group" "eks_cluster_sg" {
-  name = format("%s-eks-cluster-sg", var.name)
-  description = "Security group for EKS cluster"
-  vpc_id = var.vpc_id
-
-  ingress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
+######################## EKS FARGATE ########################
 #------------------ EKS Cluster ------------------
 resource "aws_eks_cluster" "eks" {
   name     = var.name
@@ -42,52 +22,9 @@ resource "aws_eks_cluster" "eks" {
     aws_iam_role_policy_attachment.eks_vpc,
   ]
 
-  tags = var.project
-}
-
-#------------------ EKS Cluster IAM Role ------------------
-resource "aws_iam_role" "eks" {
-  name = format("%s-eks-role", var.name)
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "eks.amazonaws.com"
-        }
-        Action = "sts:AssumeRole"
-      }
-    ]
+  tags = merge(var.tags, {
+    Name = "${var.project.env}-${var.project.name}-eks-cluster"
   })
-
-  tags = var.project
-}
-
-#Attach EKS Cluster Policy
-resource "aws_iam_role_policy_attachment" "eks_cluster" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.eks.name
-}
-
-#Attach EKS VPC Resource Controller Policy
-resource "aws_iam_role_policy_attachment" "eks_vpc" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
-  role       = aws_iam_role.eks.name
-}
-
-#------------------ EKS OpenID Connect Provider ------------------
-data "tls_certificate" "eks" {
-  url = aws_eks_cluster.eks.identity[0].oidc[0].issuer
-}
-
-resource "aws_iam_openid_connect_provider" "eks" {
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
-  url             = aws_eks_cluster.eks.identity[0].oidc[0].issuer
-
-  tags = var.project
 }
 
 #------------------ EKS Addons ------------------
@@ -124,5 +61,22 @@ resource "aws_eks_addon" "eks_addons_extra" {
   addon_version            = each.value.version
   service_account_role_arn = lookup(each.value, "role_arn", null)
   
-  tags = var.project
+  tags = merge(var.tags, {
+    Name = "${var.project.env}-${var.project.name}-eks-addon-${each.value.name}"
+  })
+}
+
+#------------------ EKS OpenID Connect Provider ------------------
+data "tls_certificate" "eks" {
+  url = aws_eks_cluster.eks.identity[0].oidc[0].issuer
+}
+
+resource "aws_iam_openid_connect_provider" "eks" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
+  url             = aws_eks_cluster.eks.identity[0].oidc[0].issuer
+
+  tags = merge(var.tags, {
+    Name = "${var.project.env}-${var.project.name}-eks-oidc-provider"
+  })
 }

@@ -6,6 +6,12 @@ variable "project" {
   })
 }
 
+variable "tags" {
+  type = object({
+    Name = string
+  })
+}
+
 variable "vpc_id" {
   type = string
 }
@@ -16,6 +22,7 @@ variable "subnet_ids" {
 
 variable "dns_cert_arn" {
   type = string
+  default = null
 }
 
 variable "source_ingress_sg_cidr" {
@@ -36,11 +43,10 @@ variable "target_groups" {
     health_check_path = string
     priority         = number
     host_header      = string
+    target_type      = string
     ec2_id           = string
   }))
   default = {}
 }
 
-# variable "container_id" {
-#   type = string
-# }
+

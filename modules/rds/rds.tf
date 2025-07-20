@@ -1,30 +1,4 @@
-#---------------------------------Security Group---------------------------------
-#Security Group
-resource "aws_security_group" "sg_db" {
-  name        = "${var.project.env}-${var.project.name}-sg-rds-${var.rds_name}"
-  description = "SG for db ${var.rds_name}"
-  vpc_id      = var.network.vpc_id
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-#Security Group Rule
-resource "aws_security_group_rule" "sg_rule_from_sg_id" {
-  count                    = length(var.allowed_sg_ids_access_rds)
-  type                     = "ingress"
-  from_port                = var.rds_port
-  to_port                  = var.rds_port
-  protocol                 = "TCP"
-  source_security_group_id = var.allowed_sg_ids_access_rds[count.index]
-  security_group_id        = aws_security_group.sg_db.id
-  description              = "From sg ${var.allowed_sg_ids_access_rds[count.index]}"
-}
-
+##################################### RDS #####################################
 #---------------------------------Parameter Group---------------------------------
 resource "aws_db_parameter_group" "db_parameter_group" {
   name   = "${var.project.env}-${var.project.name}-${var.rds_name}"
@@ -45,7 +19,7 @@ resource "aws_db_parameter_group" "db_parameter_group" {
 #---------------------------------Subnet Group---------------------------------
 resource "aws_db_subnet_group" "db_subnet_group" {
   name       = "${var.project.env}-${var.project.name}-${var.rds_name}"
-  subnet_ids = var.network.private_subnet_ids
+  subnet_ids = var.network.private_subnet_id
 }
 
 #---------------------------------RDS Instance---------------------------------
@@ -62,7 +36,7 @@ resource "aws_db_instance" "db" {
   engine                 = var.rds_engine
   engine_version         = var.rds_engine_version
   instance_class         = var.rds_class
-  db_name                = replace("${var.rds_name}", "-", "_")
+  db_name                = var.db_name 
   username               = var.rds_username
   password               = var.rds_password
   port                   = var.rds_port
@@ -86,10 +60,10 @@ resource "aws_db_instance" "db" {
   backup_retention_period = var.rds_backup_retention_period
   backup_window           = "00:30-01:30"
   maintenance_window      = "sat:04:30-sat:05:30"
-  tags                    = {
-    name = "${var.project.env}-${var.project.name}-${var.rds_name}"
-    env  = "${var.project.env}"
-  }
+  
+  tags = merge(var.tags, {
+    Name = "${var.project.env}-${var.project.name}-${var.rds_name}"
+  })
 }
 
 

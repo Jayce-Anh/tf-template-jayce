@@ -1,6 +1,6 @@
-######################## CODEBUILD ########################
+######################### CODE BUILD #########################
 resource "aws_codebuild_project" "codebuild" {
-  name         = "${var.project.env}-${var.project.name}-build-project"
+  name         = "${var.project.env}-${var.project.name}-${var.build_name}-project"
   service_role = var.codebuild_role_arn
 
   artifacts {
@@ -24,4 +24,8 @@ resource "aws_codebuild_project" "codebuild" {
     type      = "CODEPIPELINE"
     buildspec = file(var.buildspec_file)
   }
+  tags = merge(var.tags, {
+    Name = "${var.project.env}-${var.project.name}-${var.build_name}-project"
+    Env = "${var.project.env}"
+  })
 }

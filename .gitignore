@@ -1,6 +1,5 @@
-/terraform.tfvars
-/.terraform/
+/terraform.tfstate
+/terraform.tfstate.lock.info
+/.terraform
 /.terraform.lock.hcl
-/.terraform.tfstate
-
-#test
+/terraform.tfvars

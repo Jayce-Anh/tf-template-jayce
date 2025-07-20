@@ -12,7 +12,7 @@ output "lb_listener_http_arn" {
 }
 
 output "lb_listener_https_arn" {
-  value = aws_lb_listener.lb_listener_https.arn
+  value = var.dns_cert_arn != null ? aws_lb_listener.lb_listener_https[0].arn : null
 }
 
 ######################## TARGET GROUP ########################

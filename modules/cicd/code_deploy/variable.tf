@@ -9,6 +9,12 @@ variable "project" {
   })
 }
 
+variable "tags" {
+  type = object({
+    Name = string
+  })
+}
+
 variable "appspec_file" {
   type = string
 }

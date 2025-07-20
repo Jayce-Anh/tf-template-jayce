@@ -1,53 +1,4 @@
 ##################################### NODE GROUP #########################################
-#-------------------------- Node Group Security Group --------------------------
-resource "aws_security_group" "node_groups" {
-  for_each = var.node_groups
-
-  name   = format("%s-%s-eks-node-group-sg", var.name, each.key)
-  vpc_id = var.eks_vpc
-
-  ingress {
-    from_port                = 443
-    to_port                  = 443
-    protocol                 = "tcp"
-    security_groups          = [aws_security_group.eks_cluster.id] 
-    description              = "Allow communication to cluster"
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = var.project
-}
-
-resource "aws_security_group_rule" "node_group_ingress" {
-  for_each = {
-    for rule_key, rule_value in flatten([
-      for ng_key, ng_value in var.node_groups : [
-        for rule_key, rule_value in lookup(ng_value, "ingress_rules", {}) : {
-          node_group = ng_key
-          rule_key   = rule_key
-          rule_value = rule_value
-        }
-      ]
-    ]) : "${rule_value.node_group}-${rule_value.rule_key}" => rule_value
-  }
-
-  security_group_id        = aws_security_group.node_groups[each.value.node_group].id
-  type                     = "ingress"
-  self                     = lookup(each.value.rule_value, "self", null)
-  source_security_group_id = lookup(each.value.rule_value, "source_security_group_id", null)
-  from_port                = lookup(each.value.rule_value, "from_port", null)
-  to_port                  = lookup(each.value.rule_value, "to_port", null)
-  protocol                 = lookup(each.value.rule_value, "protocol", null)
-  cidr_blocks              = lookup(each.value.rule_value, "cidr_blocks", null)
-  description              = lookup(each.value.rule_value, "description", null)
-}
-
 #-------------------------- Node Group --------------------------
 resource "aws_eks_node_group" "node_groups" {
   for_each = var.node_groups
@@ -100,57 +51,6 @@ resource "aws_eks_node_group" "node_groups" {
   ]
 
   tags = merge(var.project, lookup(each.value, "tags", {}))
-}
-
-#-------------------------- Node Group Role --------------------------
-resource "aws_iam_role" "node_group" {
-  name = format("%s-eks-node-group", var.name)
-
-  assume_role_policy = jsonencode({
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "ec2.amazonaws.com"
-      }
-    }]
-    Version = "2012-10-17"
-  })
-
-  tags = var.project
-}
-
-#----------- Node Group IAM Policies -----------
-resource "aws_iam_role_policy_attachment" "node_group_AmazonEKSWorkerNodePolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  role       = aws_iam_role.node_group.name
-}
-
-resource "aws_iam_role_policy_attachment" "node_group_AmazonEKS_CNI_Policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = aws_iam_role.node_group.name
-}
-
-resource "aws_iam_role_policy_attachment" "node_group_AmazonEC2ContainerRegistryReadOnly" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = aws_iam_role.node_group.name
-}
-
-resource "aws_iam_role_policy_attachment" "node_group_AmazonSSMManagedInstanceCore" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-  role       = aws_iam_role.node_group.name
-}
-
-resource "aws_iam_role_policy_attachment" "node_group_AmazonEBSCSIDriverPolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-  role       = aws_iam_role.node_group.name
-}
-
-resource "aws_iam_role_policy_attachment" "node_group_extra" {
-  for_each = { for v in var.extra_iam_policies : v => v }
-
-  policy_arn = each.value
-  role       = aws_iam_role.node_group.name
 }
 
 #-------------------------- Node Group Launch Template--------------------------

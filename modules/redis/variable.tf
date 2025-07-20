@@ -1,17 +1,23 @@
-variable "common" {
+variable "project" {
   type = object({
     region     = string
     account_id = number
-    project    = string
+    name       = string
     env        = string
+  })
+}
+
+variable "tags" {
+  type = object({
+    Name = string
   })
 }
 
 variable "network" {
   type = object({
     vpc_id             = string
-    private_subnet_ids = list(string)
-    public_subnet_ids  = list(string)
+    private_subnet_id = list(string)
+    public_subnet_id = list(string)
   })
 }
 
@@ -58,10 +64,6 @@ variable "redis_engine_version" {
 
 variable "redis_snapshot_retention_limit" {
   type = number
-}
-
-variable "tags" {
-  default = {}
 }
 
 

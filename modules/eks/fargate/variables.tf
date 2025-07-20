@@ -5,6 +5,12 @@ variable "project" {
   })
 }
 
+variable "tags" {
+  type = object({
+    Name = string
+  })
+}
+
 variable "name" {
   type = string
   description = "Name of the EKS cluster"

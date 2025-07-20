@@ -1,6 +1,13 @@
-######################## Secret variables ########################
+#################### SECRET ####################
 
-# variable "git_token" {}
-# variable "rds_username" {}
-# variable "rds_password" {}
+variable "rds_username" {
+  type = string
+}
 
+variable "rds_password" {
+  type = string
+}
+
+variable "github_token" {
+  type = string
+}

@@ -13,6 +13,12 @@ variable "project" {
   })
 }
 
+variable "tags" {
+  type = object({
+    Name = string
+  })
+}
+
 variable "project_name" {
   description = "The name of the code build project"
   type = string
@@ -27,3 +33,24 @@ variable "project_name" {
 #   description = "The name of the code deploy deployment group"
 #   type = string
 # }
+
+variable "enable_ecs_deploy" {
+  type        = bool
+  description = "Enable ECS deployment stage"
+  default     = false
+}
+
+variable "ecs_cluster_name" {
+  type        = string
+  description = "Name of the ECS cluster"
+  default     = null
+}
+
+variable "ecs_service_name" {
+  type        = string
+  description = "Name of the ECS service"
+  default     = null
+}
+
+
+
