@@ -13,7 +13,7 @@ resource "aws_lb" "lb" {
 
 #Listener of Load Balancer
 resource "aws_lb_listener" "lb_listener_https" {
-  count             = var.dns_cert_arn != null ? 1 : 0
+  count             = var.dns_cert_arn != null ? 1 : 0 
   load_balancer_arn = aws_lb.lb.arn
   port              = "443"
   protocol          = "HTTPS"

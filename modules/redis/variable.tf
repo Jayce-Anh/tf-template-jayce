@@ -16,8 +16,8 @@ variable "tags" {
 variable "network" {
   type = object({
     vpc_id             = string
-    private_subnet_id = list(string)
-    public_subnet_id = list(string)
+    private_subnet_ids = list(string)
+    public_subnet_ids  = list(string)
   })
 }
 

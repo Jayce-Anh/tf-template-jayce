@@ -1,6 +1,7 @@
 #-------------------------- S3 Bucket for CodePipeline artifact -------------------------- 
 resource "aws_s3_bucket" "bucket_artifact" {
-  bucket = "${var.project.env}-${var.project.name}-${var.pipeline_name}-codepipeline-bucket"
+  bucket        = "${var.project.env}-${var.project.name}-${var.pipeline_name}-codepipeline-bucket"
+  force_destroy = var.s3_force_del
   tags = merge(var.tags, {
     Name = "${var.project.env}-${var.project.name}-${var.pipeline_name}-codepipeline-bucket"
     Env  = "${var.project.env}"

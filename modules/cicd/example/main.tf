@@ -18,7 +18,7 @@ module "build_fe" {
   project        = local.project
   tags           = local.tags
   build_name     = "fe"
-  buildspec_file = "${path.root}/scripts/pipeline/fe-build_spec.yml"
+  buildspec_file = "${path.root}/scripts/pipeline/fe-buildspec.yml"
   env_vars_codebuild = {
     S3_BUCKET_NAME  = "${module.cloudfront.cfs3_bucket}"
     DISTRIBUTION_ID = "${module.cloudfront.distribution_id}"
@@ -54,7 +54,7 @@ module "build_be" {
   project        = local.project
   tags           = local.tags
   build_name     = "be"
-  buildspec_file = "${path.root}/scripts/pipeline/be-build_spec.yml"
+  buildspec_file = "${path.root}/scripts/pipeline/be-buildspec.yml"
   env_vars_codebuild = {
     REGISTRY_URL     = "${module.ecr.ecr_url}"
     SERVICE          = "${module.ecs.service_name["be"]}"

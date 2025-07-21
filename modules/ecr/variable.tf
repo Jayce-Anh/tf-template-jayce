@@ -6,6 +6,7 @@ variable "project" {
     account_id = string
   })
 }
+
 variable "tags" {
   type = object({
     Name = string
@@ -14,4 +15,9 @@ variable "tags" {
 
 variable "source_services" {
   type = set(string)
+}
+
+variable "s3_force_del" {
+  type        = bool
+  description = "Force destroy the ECR repository"
 }

@@ -2,7 +2,7 @@
 
 #-------------------------- CodePipeline Role --------------------------
 resource "aws_iam_role" "pipeline_role" {
-  name = "${var.project.name}-${var.project.env}-codepipeline-role"
+  name = "${var.project.env}-${var.project.name}-${var.pipeline_name}-codepipeline-role"
 
   assume_role_policy = <<EOF
 {
@@ -201,7 +201,7 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
 
 #-------------------------- CodeBuild Role --------------------------
 resource "aws_iam_role" "codebuild_role" {
-  name               = "${var.project.name}-${var.project.env}-codebuild-role"
+  name               = "${var.project.name}-${var.project.env}-${var.pipeline_name}-codebuild-role"
   assume_role_policy = jsonencode({
     Version   = "2012-10-17"
     Statement = [
@@ -309,8 +309,7 @@ resource "aws_iam_role_policy" "s3_policy_cicd" {
 
 #-------------------------- CodeDeploy Role --------------------------
 resource "aws_iam_role" "codedeploy_role" {
-  name = "${var.project.env}-${var.project.name}-codedeploy-role"
-
+  name = "${var.project.name}-${var.project.env}-${var.pipeline_name}-codedeploy-role"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",

@@ -1,7 +1,7 @@
 #-----------------Elasticache Subnet group-----------------
 resource "aws_elasticache_subnet_group" "subnet_group" {
   name       = "${var.project.env}-${var.project.name}-cache-${var.redis_name}"
-  subnet_ids = var.network.private_subnet_id
+  subnet_ids = var.network.private_subnet_ids
 }
 
 #-----------------Elasticache Security group-----------------

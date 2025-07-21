@@ -19,7 +19,7 @@ resource "aws_db_parameter_group" "db_parameter_group" {
 #---------------------------------Subnet Group---------------------------------
 resource "aws_db_subnet_group" "db_subnet_group" {
   name       = "${var.project.env}-${var.project.name}-${var.rds_name}"
-  subnet_ids = var.network.private_subnet_id
+  subnet_ids = var.network.private_subnet_ids
 }
 
 #---------------------------------RDS Instance---------------------------------

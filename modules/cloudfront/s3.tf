@@ -1,7 +1,8 @@
 ################################# S3 BUCKET #################################
 #Create S3 Bucket
 resource "aws_s3_bucket" "s3" {
-  bucket = "${var.project.env}-${var.project.name}-${var.service_name}"
+  bucket        = "${var.project.env}-${var.project.name}-${var.service_name}-s3cf"
+  force_destroy = var.s3_force_del
 
   tags = merge(var.tags, {
     Name = "${var.project.env}-${var.project.name}-${var.service_name}-s3cf"

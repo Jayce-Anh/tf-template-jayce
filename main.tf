@@ -56,11 +56,11 @@ module "alb" {
 
   target_groups = {
     be = {
-      name              = "tg-1"
+      name              = "be"
       service_port      = 5000
-      health_check_path = "/api/v1"
+      health_check_path = "/health"
       priority          = 1
-      host_header       = "ecs-be.jayce-lab.work"
+      host_header       = "todo-be.jayce-lab.work"
       target_type       = "ip"
       ec2_id            = null
     }
@@ -93,10 +93,16 @@ module "cloudfront" {
   tags              = local.tags
   service_name      = "todo-fe"
   cf_cert_arn       = module.acm_s3cf.cert_arn
-  cloudfront_domain = "ecs-fe.jayce-lab.work"
+  s3_force_del      = true
+  cloudfront_domain = "todo-fe.jayce-lab.work"
   custom_error_response = {
     "403" = {
       error_code         = 403
+      response_code      = 200
+      response_page_path = "/index.html"
+    }
+    "404" = {
+      error_code         = 404
       response_code      = 200
       response_page_path = "/index.html"
     }
@@ -108,51 +114,8 @@ module "ecr" {
   source          = "./modules/ecr"
   project         = local.project
   tags            = local.tags
+  s3_force_del    = true
   source_services = ["be"]
-}
-
-############################# SECRET MANAGER ############################
-module "secret_manager" {
-  source      = "./modules/secret_manager"
-  project     = local.project
-  tags        = local.tags
-  secret_name = "todo-app-secret"
-}
-
-############################# PARAMETER STORE ############################
-module "parameter_store" {
-  source          = "./modules/parameter_store"
-  project         = local.project
-  tags            = local.tags
-  source_services = ["be", "fe"]
-}
-
-################################ ECS #######################################
-module "ecs" {
-  source           = "./modules/ecs"
-  project          = local.project
-  tags             = local.tags
-  vpc_id           = local.network.vpc_id
-  lb_sg_id         = module.alb.lb_sg_id
-  target_group_arn = module.alb.tg_arns["be"]
-  subnets          = local.network.private_subnet_ids
-  task_definitions = {
-    "be" = {
-      container_name       = "be"
-      container_image      = "${local.project.account_id}.dkr.ecr.${local.project.region}.amazonaws.com/${module.ecr.ecr_name}:latest"
-      desired_count        = 1
-      cpu                  = 1024 # 1 vCPU
-      memory               = 2048 # 2 GB RAM
-      container_port       = 5000
-      host_port            = 5000
-      health_check_path    = "/api/v1"
-      enable_load_balancer = true
-      load_balancer = {
-        target_group_port = 5000
-        container_port    = 5000
-      }
-    }
-  }
 }
 
 ############################# RDS #################################
@@ -217,6 +180,50 @@ module "redis" {
   }
 }
 
+############################# SECRET MANAGER ############################
+module "secret_manager" {
+  source      = "./modules/secret_manager"
+  project     = local.project
+  tags        = local.tags
+  secret_name = "todo-app-secret"
+}
+
+############################# PARAMETER STORE ############################
+module "parameter_store" {
+  source          = "./modules/parameter_store"
+  project         = local.project
+  tags            = local.tags
+  source_services = ["be", "fe"]
+}
+
+################################ ECS #######################################
+module "ecs" {
+  source           = "./modules/ecs"
+  project          = local.project
+  tags             = local.tags
+  vpc_id           = local.network.vpc_id
+  lb_sg_id         = module.alb.lb_sg_id
+  target_group_arn = module.alb.tg_arns["be"]
+  subnets          = local.network.private_subnet_ids
+  task_definitions = {
+    "be" = {
+      container_name       = "be"
+      container_image      = "${local.project.account_id}.dkr.ecr.${local.project.region}.amazonaws.com/${module.ecr.ecr_name}:latest"
+      desired_count        = 1
+      cpu                  = 1024 # 1 vCPU
+      memory               = 2048 # 2 GB RAM
+      container_port       = 5000
+      host_port            = 5000
+      health_check_path    = "/health"
+      enable_load_balancer = true
+      load_balancer = {
+        target_group_port = 5000
+        container_port    = 5000
+      }
+    }
+  }
+}
+
 ############################# CICD ###############################
 #-------------------FE pipeline----------------
 module "pipeline_fe" {
@@ -230,6 +237,7 @@ module "pipeline_fe" {
   pipeline_name     = "fe"
   git_token         = var.github_token
   enable_ecs_deploy = false
+  s3_force_del      = true
 }
 
 module "build_fe" {
@@ -266,6 +274,7 @@ module "pipeline_be" {
   enable_ecs_deploy = true
   ecs_cluster_name  = module.ecs.cluster_name
   ecs_service_name  = module.ecs.service_name["be"]
+  s3_force_del      = true
 }
 
 module "build_be" {

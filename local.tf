@@ -1,7 +1,7 @@
 #-------------------Initial terraform tfstate configuration -------------------#
 terraform {
   backend "s3" {
-    bucket = "jayce-terraform-state"
+    bucket = "lab-jayce-terraform-state"
     key    = "lab/terraform.tfstate"
     region = "ap-southeast-1"
   }

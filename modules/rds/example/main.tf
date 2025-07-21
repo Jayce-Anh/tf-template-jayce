@@ -5,7 +5,7 @@ module "rds" {
   tags    = local.tags
 
   rds_name = "mysql-db"
-  db_name = "${local.project.name}"
+  db_name  = local.project.name
   multi_az = false
   allowed_sg_ids_access_rds = [
     module.bastion.ec2_sg_id,
@@ -28,7 +28,6 @@ module "rds" {
   rds_port                              = 3306
   rds_backup_retention_period           = 7
   performance_insights_retention_period = 0
-
 
   rds_family = "mysql8.0"
   aws_db_parameters = {

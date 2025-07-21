@@ -52,5 +52,8 @@ variable "ecs_service_name" {
   default     = null
 }
 
-
+variable "s3_force_del" {
+  type        = bool
+  description = "Force destroy the S3 bucket"
+}
 

@@ -3,7 +3,7 @@
 resource "aws_lb_target_group" "tg" {
   for_each = var.target_groups
   
-  name        = "${var.project.env}-${var.project.name}-tg-${each.value.name}"
+  name        = "${var.project.env}-${var.project.name}-${each.value.name}"
   port        = each.value.service_port
   protocol    = "HTTP"
   target_type = each.value.target_type

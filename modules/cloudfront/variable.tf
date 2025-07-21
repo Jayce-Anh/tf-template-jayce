@@ -51,3 +51,8 @@ variable "create_full_access_policy" {
   description = "whether or not to create iam policy of s3 full access"
   default     = true
 }
+
+variable "s3_force_del" {
+  type        = bool
+  description = "Force destroy the S3 bucket"
+}
