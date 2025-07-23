@@ -1,26 +1,3 @@
-#-------------------------------------Get AMI ID-------------------------------------#
-data "aws_ami" "ubuntu-ami" {
-  most_recent = true
-  owners      = ["099720109477"]
-  # name_regex = "ubuntu"
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
-  }
-  filter {
-    name   = "architecture"
-    values = ["x86_64"]
-  }
-  filter {
-    name   = "root-device-type"
-    values = ["ebs"]
-  }
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-
 #-------------------------------------EC2 Instance-------------------------------------#
 resource "aws_instance" "ec2" {
   ami                    = data.aws_ami.ubuntu-ami.id
