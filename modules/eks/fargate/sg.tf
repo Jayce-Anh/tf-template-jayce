@@ -1,7 +1,7 @@
 ######################## SECURITY GROUP ########################
 #------------------Security Group for EKS Cluster ------------------
 resource "aws_security_group" "eks_cluster_sg" {
-  name = format("%s-eks-cluster-sg", var.name)
+  name = format("%s-eks-cluster-sg", var.eks_name)
   description = "Security group for EKS cluster"
   vpc_id = var.vpc_id
 
@@ -20,6 +20,6 @@ resource "aws_security_group" "eks_cluster_sg" {
   }
 
   tags = merge(var.tags, {
-    Name = "${var.project.env}-${var.project.name}-eks-cluster-sg"
+    Name = "${var.project.env}-${var.project.name}-${var.eks_name}-eks-cluster-sg"
   })
 }

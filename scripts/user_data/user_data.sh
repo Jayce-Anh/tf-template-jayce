@@ -1,4 +1,11 @@
 #!/bin/bash
+
+#--------------Install netstat-------------#
+apt-get install -y net-tools
+
+#--------------Install coreutils-------------#
+apt-get install coreutils -y
+
 #--------------Install docker--------------#
 apt-get update
 apt-get install -y cloud-utils apt-transport-https ca-certificates curl software-properties-common
@@ -33,3 +40,11 @@ aws --version
 # systemctl start codedeploy-agent
 # systemctl enable codedeploy-agent
 
+#-----------------Jenkins------------------# 
+# sudo apt update -y
+# sudo apt install openjdk-17-jdk -y
+# curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo /usr/bin/tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+# echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+# sudo apt-get update
+# sudo apt-get install jenkins -y
+# echo "sudo cat /var/lib/jenkins/secrets/initialAdminPassword"

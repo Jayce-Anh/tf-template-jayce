@@ -11,7 +11,7 @@ variable "tags" {
   })
 }
 
-variable "name" {
+variable "eks_name" {
   type = string
 }
 
@@ -58,7 +58,7 @@ variable "addons" {
   default = {}
 }
 
-variable "cluster_ingress" {
+variable "eks_sg_ingress" {
   description = "Map of ingress rules to add to the EKS cluster security group"
   type        = map(any)
   default     = {}

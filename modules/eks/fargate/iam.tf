@@ -1,7 +1,7 @@
 ######################## EKS FARGATE IAM ROLE ########################
 #------------------ EKS Cluster IAM Role ------------------
 resource "aws_iam_role" "eks" {
-  name = format("%s-eks-role", var.name)
+  name = format("%s-eks-role", var.eks_name)
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -33,7 +33,7 @@ resource "aws_iam_role_policy_attachment" "eks_vpc" {
 
 #------------------ Fargate Profile IAM Role ------------------
 resource "aws_iam_role" "eks_fargate" {
-  name = format("%s-eks-fargate-role", var.name)
+  name = format("%s-eks-fargate-role", var.eks_name)
 
   assume_role_policy = jsonencode({
     Statement = [{
@@ -47,7 +47,7 @@ resource "aws_iam_role" "eks_fargate" {
   })
 
   tags = merge(var.tags, {
-    Name = "${var.project.env}-${var.project.name}-eks-fargate-role"
+    Name = "${var.project.env}-${var.project.name}-${var.eks_name}-eks-fargate-role"
   })
 }
 

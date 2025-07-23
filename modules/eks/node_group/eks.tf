@@ -1,7 +1,7 @@
 #################################### EKS CLUSTER ####################################
 #------------------ EKS Cluster ------------------
 resource "aws_eks_cluster" "eks" {
-  name     = var.name
+  name     = var.eks_name
   version  = var.eks_version
   role_arn = aws_iam_role.eks.arn
 

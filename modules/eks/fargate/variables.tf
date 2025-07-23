@@ -11,7 +11,7 @@ variable "tags" {
   })
 }
 
-variable "name" {
+variable "eks_name" {
   type = string
   description = "Name of the EKS cluster"
 }

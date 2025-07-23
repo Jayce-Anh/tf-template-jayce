@@ -49,13 +49,13 @@ locals {
     fe = {
       url          = "https://github.com/Jayce-Anh/todo_app-fe.git"
       name         = "todo_app-fe"
-      branch       = "ecs"
+      branch       = "main"
       organization = "Jayce-Anh"
     }
     be = {
       url          = "https://github.com/Jayce-Anh/todo_app-be.git"
       name         = "todo_app-be"
-      branch       = "ecs"
+      branch       = "main"
       organization = "Jayce-Anh"
     }
   }

@@ -1,7 +1,7 @@
 ####################### EKS CLUSTER IAM ROLE #######################
 #--------------- EKS Cluster Role --------------
 resource "aws_iam_role" "eks" {
-  name = format("%s-eks-role", var.name)
+  name = format("%s-eks-role", var.eks_name)
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -34,7 +34,7 @@ resource "aws_iam_role_policy_attachment" "eks_vpc" {
 
 ##-------------------------- Node Group Role --------------------------
 resource "aws_iam_role" "node_group" {
-  name = format("%s-eks-node-group", var.name)
+  name = format("%s-eks-node-group", var.eks_name)
 
   assume_role_policy = jsonencode({
     Statement = [{

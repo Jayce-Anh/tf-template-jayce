@@ -1,11 +1,12 @@
 module "eks" {
   source = "./modules/eks/node_group"
   project = local.project
-  name = "lab"
-  eks_version = "1.25"
+  eks_name = "lab"
+  eks_version = "1.35"
   eks_subnet = local.network.private_subnet_id
   eks_vpc = local.network.vpc_id
-  cluster_ingress = {
+  # Security Group Ingress
+  eks_sg_ingress = {
     ingress_rules = {
       rule1 = {
         from_port   = 443
@@ -16,6 +17,7 @@ module "eks" {
       }
     }
   }
+  # Node Groups
   node_groups = {
     node1 = {
       subnet_ids = local.network.private_subnet_id[0]
@@ -61,6 +63,7 @@ module "eks" {
       }
     }
   }
+  
   # addons = [
   #   {
   #     name = "aws-ebs-csi-driver"

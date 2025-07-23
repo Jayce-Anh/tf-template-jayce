@@ -1,7 +1,7 @@
 ######################## SECURITY GROUP ########################
 #------------------ EKS Cluster Security Group ------------------
 resource "aws_security_group" "eks_cluster" {
-  name = format("%s-eks-cluster-sg", var.name)
+  name = format("%s-eks-cluster-sg", var.eks_name)
   description = "Security group for EKS cluster"
   vpc_id = var.eks_vpc
 
@@ -18,7 +18,7 @@ resource "aws_security_group" "eks_cluster" {
 }
 
 # Allow node groups to communicate with the cluster
-resource "aws_security_group_rule" "cluster_ingress_from_nodes" {
+resource "aws_security_group_rule" "eks_sg_ingress_from_nodes" {
   for_each = var.node_groups
   
   security_group_id        = aws_security_group.eks_cluster.id
@@ -31,8 +31,8 @@ resource "aws_security_group_rule" "cluster_ingress_from_nodes" {
 }
 
 # Extra ingress rules
-resource "aws_security_group_rule" "cluster_extra_ingress" {
-  for_each = try(var.cluster_ingress.ingress_rules, {})
+resource "aws_security_group_rule" "eks_sg_ingress_extra" {
+  for_each = try(var.eks_sg_ingress.ingress_rules, {})
   
   security_group_id = aws_security_group.eks_cluster.id
   type              = "ingress"
@@ -49,7 +49,7 @@ resource "aws_security_group_rule" "cluster_extra_ingress" {
 resource "aws_security_group" "node_groups" {
   for_each = var.node_groups
 
-  name   = format("%s-%s-eks-node-group-sg", var.name, each.key)
+  name   = format("%s-%s-eks-node-group-sg", var.eks_name, each.key)
   vpc_id = var.eks_vpc
 
   ingress {

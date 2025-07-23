@@ -2,9 +2,11 @@ module "eks" {
   source = "./modules/eks/fargate"
   project = local.project
   vpc_id = local.network.vpc_id
-  eks_version = "1.25"
-  name = "lab"
+  eks_version = "1.33"
+  eks_name = "lab"
   eks_subnet = local.network.private_subnet_id
+
+  # Fargate Profile
   fargates = {
     node1 = {
       subnet_ids = local.network.private_subnet_id[0]

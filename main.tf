@@ -25,7 +25,6 @@ module "bastion" {
   path_user_data             = "${path.root}/scripts/user_data/user_data.sh"
   key_name                   = "lab-jayce"
   subnet_id                  = local.network.public_subnet_ids[0] #use public subnet 
-  alb_sg_id                  = module.alb.lb_sg_id
 
   sg_ingress = {
     rule1 = {
@@ -33,12 +32,6 @@ module "bastion" {
       to_port     = 22
       protocol    = "tcp"
       description = "Connect to bastion"
-    },
-    rule2 = {
-      from_port   = 3306
-      to_port     = 3306
-      protocol    = "tcp"
-      description = "Connect to RDS MySQL"
     }
   }
 }

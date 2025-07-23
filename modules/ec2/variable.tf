@@ -51,8 +51,9 @@ variable "instance_name" {
 variable "subnet_id" {}
 
 variable "alb_sg_id" {
-  type = string
-  description = "Security group ID of ALB"
+  type        = string
+  default     = null
+  description = "Security group ID of ALB (optional)"
 }
 
 # variable "path_public_key" {

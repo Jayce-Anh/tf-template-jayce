@@ -57,7 +57,7 @@ resource "aws_eks_node_group" "node_groups" {
 resource "aws_launch_template" "node_groups" {
   for_each = var.node_groups
 
-  name          = format("%s-%s-eks-node-group", var.name, each.key)
+  name          = format("%s-%s-eks-node-group", var.eks_name, each.key)
   user_data     = can(data.cloudinit_config.node_groups[each.key]) ? data.cloudinit_config.node_groups[each.key].rendered : null
   instance_type = lookup(each.value, "instance_type", "c5.large")
   key_name      = lookup(each.value, "key_name", null)
@@ -116,7 +116,7 @@ resource "aws_launch_template" "node_groups" {
       resource_type = tag_specifications.value
 
       tags = merge(var.project, lookup(each.value, "tags", {}), {
-        Name = format("%s-eks-%s-node-group", var.name, each.key)
+        Name = format("%s-eks-%s-node-group", var.eks_name, each.key)
       })
     }
   }
