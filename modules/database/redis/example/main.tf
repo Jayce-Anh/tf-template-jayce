@@ -1,5 +1,5 @@
 module "redis" {
-  source                           = "./modules/redis"
+  source                           = "./modules/database/redis"
   project                          = local.project
   network                          = local.network
   tags                             = local.tags

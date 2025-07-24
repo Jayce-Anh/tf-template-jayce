@@ -1,5 +1,5 @@
 module "rds" {
-  source  = "./modules/rds"
+  source  = "./modules/database/rds"
   project = local.project
   network = local.network
   tags    = local.tags

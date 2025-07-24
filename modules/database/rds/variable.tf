@@ -75,6 +75,7 @@ variable "rds_username" {
 
 variable "rds_password" {
   type = string
+  sensitive = true
 }
 
 variable "rds_backup_retention_period" {
