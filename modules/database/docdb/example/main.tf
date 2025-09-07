@@ -26,6 +26,9 @@ module "docdb" {
   instance_count = 2
   instance_class = "db.t3.medium"
 
+  # Security group
+  allowed_sg_ids_access_docdb = ["sg-xxxxxxxxx", "sg-yyyyyyyyy"]
+
   # Backup Configuration
   backup_retention_period      = 7
   preferred_backup_window      = "07:00-09:00"

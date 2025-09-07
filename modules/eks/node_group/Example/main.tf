@@ -1,10 +1,15 @@
+############################ EKS ############################
 module "eks" {
   source = "./modules/eks/node_group"
   project = local.project
+  tags = local.tags
   eks_name = "lab"
   eks_version = "1.35"
-  eks_subnet = local.network.private_subnet_id
-  eks_vpc = local.network.vpc_id
+  eks_subnet = local.network.private_subnet_ids
+  eks_vpc = local.network.vpc_ids
+  endpoint_private_access = true
+  endpoint_public_access = true
+  endpoint_public_access_cidrs = ["0.0.0.0/0"] # Your office ip or office cidr
   # Security Group Ingress
   eks_sg_ingress = {
     ingress_rules = {
@@ -17,15 +22,23 @@ module "eks" {
       }
     }
   }
+
+  # Ensure VPC infrastructure is fully created before EKS
+  depends_on = [
+    module.vpc
+  ]
+  
   # Node Groups
   node_groups = {
     node1 = {
-      subnet_ids = local.network.private_subnet_id[0]
+      subnet_ids = local.network.private_subnet_ids
       min_size = 1
       max_size = 3
       desired_size = 2
       instance_type = "t3.small"
+      capacity_type = "ON_DEMAND" #ON_DEMAND or SPOT
       disk_size = 10
+      ami_type = "AL2023_x86_64"
       disk_type = "gp3"
       ingress_rules = {
         ssh = {
@@ -37,13 +50,16 @@ module "eks" {
         }
       }
     }
+    
+    # Spot instance 
     node2 = {
-      subnet_ids = local.network.private_subnet_id[1]
-      min_size = 1
-      max_size = 3
-      desired_size = 2
-      instance_type = "t3.small"
-      disk_size = 10
+      subnet_ids = [local.network.private_subnet_ids[0]]
+      min_size = 2
+      max_size = 10
+      desired_size = 4
+      instance_types = ["t3.medium", "t3.small", "t3.large"]
+      capacity_type = "SPOT" #ON_DEMAND or SPOT
+      disk_size = 20
       disk_type = "gp3"
       ingress_rules = {
         ssh = {
@@ -52,6 +68,25 @@ module "eks" {
           protocol    = "tcp"
           cidr_blocks = ["0.0.0.0/0"]
           description = "Allow SSH from VPC for node2"
+        }
+      }
+    }
+    node3 = {
+      subnet_ids = [local.network.private_subnet_ids[1]]
+      min_size = 1
+      max_size = 3
+      desired_size = 2
+      instance_type = "t3.small"
+      capacity_type = "ON_DEMAND" #ON_DEMAND or SPOT
+      disk_size = 10
+      disk_type = "gp3"
+      ingress_rules = {
+        ssh = {
+          from_port   = 22
+          to_port     = 22
+          protocol    = "tcp"
+          cidr_blocks = ["0.0.0.0/0"]
+          description = "Allow SSH from VPC for node3"
         },
         alb = {
           from_port              = 8080

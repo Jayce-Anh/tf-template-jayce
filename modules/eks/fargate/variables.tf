@@ -80,3 +80,30 @@ variable "vpc_id" {
   type = string
 }
 
+variable "fargate_sg_ingress" {
+  type = list(object({
+    from_port   = number
+    to_port     = number
+    protocol    = string
+    cidr_blocks = list(string)
+  }))
+  default = []
+}
+
+variable "endpoint_public_access" {
+  description = "Indicates whether or not the Amazon EKS public API server endpoint is enabled"
+  type        = bool
+  default     = false
+}
+
+variable "endpoint_private_access" {
+  description = "Indicates whether or not the Amazon EKS private API server endpoint is enabled"
+  type        = bool
+  default     = true
+}
+
+variable "endpoint_public_access_cidrs" {
+  description = "List of CIDR blocks which can access the Amazon EKS public API server endpoint. Ignored when cluster_endpoint_public_access is false"
+  type        = list(string)
+  default     = null
+}

@@ -1,11 +1,7 @@
-module "ecr_be" {
+module "ecr" {
   source          = "./modules/ecr"
   project         = local.project
-  source_services = ["be"]
-}
-
-module "ecr_fe" {
-  source          = "./modules/ecr"
-  project         = local.project
-  source_services = ["fe"]
+  tags            = local.tags
+  source_services = ["be", "fe"]
+  s3_force_del = true
 }

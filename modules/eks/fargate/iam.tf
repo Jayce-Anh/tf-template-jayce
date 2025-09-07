@@ -51,6 +51,34 @@ resource "aws_iam_role" "eks_fargate" {
   })
 }
 
+#------------------ EBS CSI Driver IAM Role ------------------
+resource "aws_iam_role" "ebs_csi_driver" {
+  name = format("%s-ebs-csi-driver-role", var.eks_name)
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.eks.arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub": "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+            "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:aud": "sts.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = merge(var.tags, {
+    Name = "${var.project.env}-${var.project.name}-${var.eks_name}-ebs-csi-driver-role"
+  })
+}
+
 #Attach Fargate Pod Execution Role Policy
 resource "aws_iam_role_policy_attachment" "eks_fargate_common" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy"
@@ -64,3 +92,12 @@ resource "aws_iam_role_policy_attachment" "eks_fargate_extra" {
   policy_arn = each.value
   role       = aws_iam_role.eks_fargate.name
 }
+
+#Attach EBS CSI Driver Policy
+resource "aws_iam_role_policy_attachment" "ebs_csi_driver" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+  role       = aws_iam_role.ebs_csi_driver.name
+}
+
+
+

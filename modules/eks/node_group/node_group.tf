@@ -6,10 +6,12 @@ resource "aws_eks_node_group" "node_groups" {
   cluster_name    = aws_eks_cluster.eks.name
   node_group_name = lookup(each.value, "name", each.key)
   node_role_arn   = aws_iam_role.node_group.arn
-  subnet_ids      = split(",", each.value.subnet_ids)
-  ami_type        = lookup(each.value, "ami_type", "AL2_x86_64")
+  subnet_ids      = each.value.subnet_ids
+  ami_type        = lookup(each.value, "ami_type", "AL2023_x86_64_STANDARD")  #AMAZON 2023
   labels          = lookup(each.value, "labels", null)
   release_version = lookup(each.value, "release_version", null)
+  capacity_type   = lookup(each.value, "capacity_type", "ON_DEMAND")
+  instance_types  = lookup(each.value, "instance_types", null)
 
 #----------- Scaling Config -----------
   scaling_config {
@@ -59,7 +61,7 @@ resource "aws_launch_template" "node_groups" {
 
   name          = format("%s-%s-eks-node-group", var.eks_name, each.key)
   user_data     = can(data.cloudinit_config.node_groups[each.key]) ? data.cloudinit_config.node_groups[each.key].rendered : null
-  instance_type = lookup(each.value, "instance_type", "c5.large")
+  instance_type = lookup(each.value, "instance_types", null) != null ? null : lookup(each.value, "instance_type", null)
   key_name      = lookup(each.value, "key_name", null)
 
 #Block Device Mappings
@@ -72,7 +74,6 @@ resource "aws_launch_template" "node_groups" {
     }
   }
 
-#Block Device Mappings
   dynamic "block_device_mappings" {
     for_each = can(each.value.block_device_mappings) ? each.value.block_device_mappings : []
 
@@ -87,7 +88,7 @@ resource "aws_launch_template" "node_groups" {
     }
   }
 
-#Network Interfaces -----------
+#Network Interfaces
   network_interfaces {
     security_groups = distinct(concat(
       [
