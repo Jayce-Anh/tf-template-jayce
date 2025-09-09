@@ -4,9 +4,9 @@ module "eks" {
   project = local.project
   tags = local.tags
   eks_name = "lab"
-  eks_version = "1.35"
+  eks_version = "1.31"
   eks_subnet = local.network.private_subnet_ids
-  eks_vpc = local.network.vpc_ids
+  eks_vpc = local.network.vpc_id
   endpoint_private_access = true
   endpoint_public_access = true
   endpoint_public_access_cidrs = ["0.0.0.0/0"] # Your office ip or office cidr
@@ -38,7 +38,7 @@ module "eks" {
       instance_type = "t3.small"
       capacity_type = "ON_DEMAND" #ON_DEMAND or SPOT
       disk_size = 10
-      ami_type = "AL2023_x86_64"
+      ami_type = "AL2023_x86_64_STANDARD"
       disk_type = "gp3"
       ingress_rules = {
         ssh = {
@@ -99,10 +99,12 @@ module "eks" {
     }
   }
   
-  # addons = [
-  #   {
-  #     name = "aws-ebs-csi-driver"
-  #     version = "v1.25.1-eksbuild.1"
-  #   }
-  # ]
+  addons = [
+    # Add extra addons here if needed
+    # Example:
+    # {
+    #   name = "aws-load-balancer-controller"
+    #   version = "v2.7.2"
+    # }
+  ]
 }

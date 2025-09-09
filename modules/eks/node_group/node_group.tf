@@ -50,6 +50,9 @@ resource "aws_eks_node_group" "node_groups" {
     aws_iam_role_policy_attachment.node_group_AmazonEC2ContainerRegistryReadOnly,
     aws_iam_role_policy_attachment.node_group_AmazonSSMManagedInstanceCore,
     aws_iam_role_policy_attachment.node_group_AmazonEBSCSIDriverPolicy,
+    # Wait for essential add-ons before creating node groups
+    aws_eks_addon.vpc_cni,
+    aws_eks_addon.kube_proxy,
   ]
 
   tags = merge(var.project, lookup(each.value, "tags", {}))

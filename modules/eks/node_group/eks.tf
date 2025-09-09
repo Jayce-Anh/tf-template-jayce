@@ -7,7 +7,7 @@ resource "aws_eks_cluster" "eks" {
 
   vpc_config {
     subnet_ids              = var.eks_subnet
-    security_group_ids      = [aws_security_group.eks_cluster.id]
+    # Let EKS auto-create the cluster security group - don't specify custom ones
     endpoint_private_access = var.endpoint_private_access
     endpoint_public_access  = var.endpoint_public_access
     public_access_cidrs     = var.endpoint_public_access ? var.endpoint_public_access_cidrs : null
@@ -18,9 +18,8 @@ resource "aws_eks_cluster" "eks" {
     bootstrap_cluster_creator_admin_permissions = true
   }
 
-  # Disable default Fargate profiles if you're using EC2 node groups
-  # This prevents the "built-in node pools" from being created
-  bootstrap_self_managed_addons = false
+  # Enable self-managed addons - these are essential for nodes to join the cluster
+  bootstrap_self_managed_addons = true
 
   enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 

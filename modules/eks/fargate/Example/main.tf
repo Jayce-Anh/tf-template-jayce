@@ -1,8 +1,9 @@
 module "eks" {
   source = "./modules/eks/fargate"
   project = local.project
+  tags = local.tags
   vpc_id = local.network.vpc_id
-  eks_version = "1.33"
+  eks_version = "1.31"
   eks_name = "lab"
   eks_subnet = local.network.private_subnet_ids
   endpoint_private_access = true
@@ -13,7 +14,7 @@ module "eks" {
   fargates = {
     node1 = {
       subnet_ids = [local.network.private_subnet_ids[0]]
-      min-size = 1
+      min_size = 1
       max_size = 3
       desired_size = 2
       instance_type = "t3.small"
@@ -23,7 +24,7 @@ module "eks" {
 
     node2 = {
       subnet_ids = [local.network.private_subnet_ids[1]]
-      min-size = 1
+      min_size = 1
       max_size = 3
       desired_size = 2
       instance_type = "t3.small"
@@ -42,9 +43,11 @@ module "eks" {
   }
 
   addons = [
-    {
-      name = "aws-ebs-csi-driver"
-      version = "v1.33.0-eksbuild.1"
-    }
+    # Add extra addons here if needed
+    # Example:
+    # {
+    #   name = "aws-load-balancer-controller"
+    #   version = "v2.7.2"
+    # }
   ]
 }

@@ -1,121 +1,47 @@
-######################## SECURITY GROUP ########################
-#------------------ EKS Cluster Security Group ------------------
-resource "aws_security_group" "eks_cluster" {
-  name = format("%s-eks-cluster-sg", var.eks_name)
-  description = "Security group for EKS cluster"
-  vpc_id = var.eks_vpc
+######################## EKS SECURITY GROUPS ########################
+# Proper EKS security group configuration following AWS best practices
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = merge(var.project, {
-    Name = "${var.project.env}-${var.project.name}-eks-cluster-sg"
-  })
-}
-
-# Allow node groups to communicate with the cluster
-resource "aws_security_group_rule" "eks_sg_ingress_from_nodes" {
-  for_each = var.node_groups
-  
-  security_group_id        = aws_security_group.eks_cluster.id
-  type                     = "ingress"
-  from_port                = 443
-  to_port                  = 443
-  protocol                 = "tcp"
-  source_security_group_id = aws_security_group.node_groups[each.key].id
-  description              = "Allow pods to communicate with the cluster API Server"
-}
-
-# Extra ingress rules
-resource "aws_security_group_rule" "eks_sg_ingress_extra" {
-  for_each = try(var.eks_sg_ingress.ingress_rules, {})
-  
-  security_group_id = aws_security_group.eks_cluster.id
-  type              = "ingress"
-  self              = lookup(each.value, "self", null)
-  source_security_group_id = lookup(each.value, "source_security_group_id", null)
-  from_port         = lookup(each.value, "from_port", null)
-  to_port           = lookup(each.value, "to_port", null)
-  protocol          = lookup(each.value, "protocol", null)
-  cidr_blocks       = lookup(each.value, "cidr_blocks", null)
-  description       = lookup(each.value, "description", null)
-}
+# Note: EKS automatically creates a cluster security group with proper rules
+# No need to create a custom cluster SG - it's redundant and can cause conflicts
 
 #-------------------------- Node Group Security Group --------------------------
 resource "aws_security_group" "node_groups" {
   for_each = var.node_groups
 
-  name   = format("%s-%s-eks-node-group-sg", var.eks_name, each.key)
-  vpc_id = var.eks_vpc
+  name_prefix = "${var.eks_name}-${each.key}-node-sg-"
+  description = "Security group for EKS node group ${each.key}"
+  vpc_id      = var.eks_vpc
 
-  ingress {
-    from_port                = 443
-    to_port                  = 443
-    protocol                 = "tcp"
-    security_groups          = [aws_security_group.eks_cluster.id] 
-    description              = "Allow communication to cluster"
-  }
-
-  ingress {
-    from_port                = 10250
-    to_port                  = 10250
-    protocol                 = "tcp"
-    security_groups          = [aws_security_group.eks_cluster.id] 
-    description              = "Allow kubelet API access from control plane"
-  }
-
-  ingress {
-    from_port   = 1025
-    to_port     = 65535
-    protocol    = "tcp"
-    self        = true
-    description = "Allow node-to-node communication"
-  }
-
-  ingress {
-    from_port   = 53
-    to_port     = 53
-    protocol    = "udp"
-    cidr_blocks = ["10.0.0.0/16"]
-    description = "Allow DNS resolution from VPC"
-  }
-
+  # Outbound: To cluster control plane and internet (via NAT Gateway)
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "All outbound traffic (for pulling images, updates, etc.)"
   }
 
-  tags = merge(var.project, {
-    Name = "${var.project.env}-${var.project.name}-eks-node-group-sg-${each.key}"
+  # Dynamic ingress rules from node group configuration
+  dynamic "ingress" {
+    for_each = lookup(each.value, "ingress_rules", {})
+    iterator = rule
+
+    content {
+      from_port       = rule.value.from_port
+      to_port         = rule.value.to_port
+      protocol        = rule.value.protocol
+      cidr_blocks     = lookup(rule.value, "cidr_blocks", null)
+      security_groups = lookup(rule.value, "source_security_group_id", null) != null ? [rule.value.source_security_group_id] : null
+      self           = lookup(rule.value, "self", null)
+      description    = lookup(rule.value, "description", null)
+    }
+  }
+
+  tags = merge(var.tags, {
+    Name = "${var.project.env}-${var.project.name}-${each.key}-node-sg"
   })
-}
 
-resource "aws_security_group_rule" "node_group_ingress" {
-  for_each = {
-    for rule_key, rule_value in flatten([
-      for ng_key, ng_value in var.node_groups : [
-        for rule_key, rule_value in lookup(ng_value, "ingress_rules", {}) : {
-          node_group = ng_key
-          rule_key   = rule_key
-          rule_value = rule_value
-        }
-      ]
-    ]) : "${rule_value.node_group}-${rule_value.rule_key}" => rule_value
+  lifecycle {
+    create_before_destroy = true
   }
-
-  security_group_id        = aws_security_group.node_groups[each.value.node_group].id
-  type                     = "ingress"
-  self                     = lookup(each.value.rule_value, "self", null)
-  source_security_group_id = lookup(each.value.rule_value, "source_security_group_id", null)
-  from_port                = lookup(each.value.rule_value, "from_port", null)
-  to_port                  = lookup(each.value.rule_value, "to_port", null)
-  protocol                 = lookup(each.value.rule_value, "protocol", null)
-  cidr_blocks              = lookup(each.value.rule_value, "cidr_blocks", null)
-  description              = lookup(each.value.rule_value, "description", null)
 }

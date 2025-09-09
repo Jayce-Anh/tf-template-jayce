@@ -11,6 +11,12 @@ resource "aws_eks_fargate_profile" "eks_fargate" {
     namespace = "default"
   }
 
+ # Wait for essential add-ons before creating Fargate profiles
+  depends_on = [
+    aws_eks_addon.vpc_cni,
+    aws_eks_addon.kube_proxy
+  ]
+
   tags = merge(var.tags, {
     Name = "${var.project.env}-${var.project.name}-eks-fargate-profile-${each.key}"
   })

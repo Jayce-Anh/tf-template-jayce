@@ -7,11 +7,14 @@ resource "aws_eks_cluster" "eks" {
 
   vpc_config {
     subnet_ids              = var.eks_subnet
-    security_group_ids      = [aws_security_group.eks_cluster_sg.id]
+    # Let EKS auto-create the cluster security group - don't override it
     endpoint_private_access = var.endpoint_private_access
     endpoint_public_access  = var.endpoint_public_access
     public_access_cidrs     = var.endpoint_public_access ? var.endpoint_public_access_cidrs : null
   }
+
+  # Enable self-managed addons - essential for Fargate workloads
+  bootstrap_self_managed_addons = true
 
   enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 

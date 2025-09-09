@@ -27,11 +27,10 @@ resource "aws_eks_addon" "vpc_cni" {
   addon_name   = "vpc-cni"
   addon_version = data.aws_eks_addon_version.vpc_cni.version
   
-  timeouts {
-    create = "10m"
-    update = "10m"
-    delete = "10m"
-  }
+  # Don't depend on Fargate profiles - they need this addon to function
+  depends_on = [
+    aws_eks_cluster.eks
+  ]
 }
 
 resource "aws_eks_addon" "coredns" {
@@ -39,15 +38,10 @@ resource "aws_eks_addon" "coredns" {
   addon_name   = "coredns"
   addon_version = data.aws_eks_addon_version.coredns.version
   
+  # CoreDNS can depend on VPC CNI but not on Fargate profiles
   depends_on = [
-    aws_eks_fargate_profile.fargate_profile
+    aws_eks_addon.vpc_cni
   ]
-  
-  timeouts {
-    create = "10m"
-    update = "10m"
-    delete = "10m"
-  }
 }
 
 resource "aws_eks_addon" "kube_proxy" {
@@ -55,11 +49,10 @@ resource "aws_eks_addon" "kube_proxy" {
   addon_name   = "kube-proxy"
   addon_version = data.aws_eks_addon_version.kube_proxy.version
   
-  timeouts {
-    create = "10m"
-    update = "10m"
-    delete = "10m"
-  }
+  # Don't depend on Fargate profiles - they need this addon to function
+  depends_on = [
+    aws_eks_cluster.eks
+  ]
 }
 
 resource "aws_eks_addon" "aws_ebs_csi_driver" {
@@ -68,15 +61,11 @@ resource "aws_eks_addon" "aws_ebs_csi_driver" {
   addon_version            = data.aws_eks_addon_version.ebs_csi_driver.version
   service_account_role_arn = aws_iam_role.ebs_csi_driver.arn
 
+  # EBS CSI can be installed after cluster creation and OIDC provider
   depends_on = [
-    aws_eks_fargate_profile.fargate_profile
+    aws_eks_cluster.eks,
+    aws_iam_openid_connect_provider.eks
   ]
-  
-  timeouts {
-    create = "10m"
-    update = "10m"
-    delete = "10m"
-  }
 
   tags = merge(var.tags, {
     Name = "${var.project.env}-${var.project.name}-${var.eks_name}-ebs-csi-driver"

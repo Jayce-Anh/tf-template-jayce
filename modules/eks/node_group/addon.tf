@@ -27,15 +27,10 @@ resource "aws_eks_addon" "vpc_cni" {
   addon_name   = "vpc-cni"
   addon_version = data.aws_eks_addon_version.vpc_cni.version
   
+  # Don't depend on node groups - nodes need this addon to join
   depends_on = [
-    aws_eks_node_group.node_groups
+    aws_eks_cluster.eks
   ]
-
-  timeouts {
-    create = "2m"
-    update = "2m"
-    delete = "2m"
-  }
 }
 
 resource "aws_eks_addon" "coredns" {
@@ -43,15 +38,10 @@ resource "aws_eks_addon" "coredns" {
   addon_name   = "coredns"
   addon_version = data.aws_eks_addon_version.coredns.version
   
+  # CoreDNS can depend on VPC CNI but not on node groups
   depends_on = [
-    aws_eks_node_group.node_groups
+    aws_eks_addon.vpc_cni
   ]
-  
-  timeouts {
-    create = "2m"
-    update = "2m"
-    delete = "2m"
-  }
 }
 
 resource "aws_eks_addon" "kube_proxy" {
@@ -59,15 +49,10 @@ resource "aws_eks_addon" "kube_proxy" {
   addon_name   = "kube-proxy"
   addon_version = data.aws_eks_addon_version.kube_proxy.version
   
+  # Don't depend on node groups - nodes need this addon to join
   depends_on = [
-    aws_eks_node_group.node_groups
+    aws_eks_cluster.eks
   ]
-
-  timeouts {
-    create = "2m"
-    update = "2m"
-    delete = "2m"
-  }
 }
 
 resource "aws_eks_addon" "aws_ebs_csi_driver" {
@@ -76,15 +61,11 @@ resource "aws_eks_addon" "aws_ebs_csi_driver" {
   addon_version            = data.aws_eks_addon_version.ebs_csi_driver.version
   service_account_role_arn = aws_iam_role.ebs_csi_driver.arn
 
+  # EBS CSI can be installed after cluster creation but before node groups
   depends_on = [
-    aws_eks_node_group.node_groups
+    aws_eks_cluster.eks,
+    aws_iam_openid_connect_provider.eks
   ]
-  
-  timeouts {
-    create = "2m"
-    update = "2m"
-    delete = "2m"
-  }
 
   tags = merge(var.tags, {
     Name = "${var.project.env}-${var.project.name}-${var.eks_name}-ebs-csi-driver"
